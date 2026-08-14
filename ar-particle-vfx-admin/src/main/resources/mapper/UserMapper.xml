@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.arpfx.platform.dao.mapper.UserMapper">
+
+    <sql id="Base_Column_List">
+        id, username, password, email, phone, nickname, tier, status, role,
+        create_time, update_time, create_by, update_by, is_deleted
+    </sql>
+
+    <select id="selectByUsername" resultType="com.arpfx.platform.entity.po.SysUser">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_user
+        WHERE username = #{username} AND is_deleted = 0
+    </select>
+
+    <select id="selectById" resultType="com.arpfx.platform.entity.po.SysUser">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_user
+        WHERE id = #{id} AND is_deleted = 0
+    </select>
+
+    <insert id="insert" parameterType="com.arpfx.platform.entity.po.SysUser" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_user (username, password, email, phone, nickname, tier, status)
+        VALUES (#{username}, #{password}, #{email}, #{phone}, #{nickname}, #{tier}, #{status})
+    </insert>
+
+    <update id="upgradeTier">
+        UPDATE sys_user SET tier = GREATEST(tier, #{tier}), update_time = NOW()
+        WHERE id = #{id} AND is_deleted = 0
+    </update>
+
+    <update id="updatePassword">
+        UPDATE sys_user SET password = #{password}, update_time = NOW()
+        WHERE id = #{id} AND is_deleted = 0
+    </update>
+
+    <select id="selectAll" resultType="com.arpfx.platform.entity.po.SysUser">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_user
+        WHERE is_deleted = 0
+        ORDER BY id DESC
+    </select>
+</mapper>

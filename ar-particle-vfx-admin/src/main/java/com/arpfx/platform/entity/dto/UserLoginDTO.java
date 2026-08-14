@@ -1,0 +1,24 @@
+package com.arpfx.platform.entity.dto;
+
+import lombok.Data;
+
+import javax.validation.constraints.NotBlank;
+import java.io.Serializable;
+
+/**
+ * 用户登录入参
+ *
+ * @author arpfx
+ * @date 2026-08-14
+ */
+@Data
+public class UserLoginDTO implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    @NotBlank(message = "用户名不能为空")
+    private String username;
+
+    @NotBlank(message = "密码不能为空")
+    private String password;
+}

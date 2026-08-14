@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.arpfx.platform.dao.mapper.FavoriteMapper">
+
+    <insert id="insert" parameterType="com.arpfx.platform.entity.po.BizFavorite" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO biz_favorite (user_id, effect_id)
+        VALUES (#{userId}, #{effectId})
+    </insert>
+
+    <update id="deleteByUserAndEffect">
+        UPDATE biz_favorite SET is_deleted = 1
+        WHERE user_id = #{userId} AND effect_id = #{effectId} AND is_deleted = 0
+    </update>
+
+    <select id="selectByUserAndEffect" resultType="com.arpfx.platform.entity.po.BizFavorite">
+        SELECT id, user_id, effect_id, create_time, is_deleted
+        FROM biz_favorite
+        WHERE user_id = #{userId} AND effect_id = #{effectId} AND is_deleted = 0
+    </select>
+
+    <select id="selectEffectCodesByUser" resultType="java.lang.String">
+        SELECT e.effect_code
+        FROM biz_favorite f
+        JOIN biz_effect e ON f.effect_id = e.id
+        WHERE f.user_id = #{userId} AND f.is_deleted = 0 AND e.is_deleted = 0
+    </select>
+</mapper>

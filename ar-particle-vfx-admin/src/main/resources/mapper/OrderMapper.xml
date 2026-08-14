@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.arpfx.platform.dao.mapper.OrderMapper">
+
+    <sql id="Base_Column_List">
+        id, order_no, user_id, order_type, effect_id, tier, amount, status,
+        pay_type, create_time, update_time, is_deleted
+    </sql>
+
+    <insert id="insert" parameterType="com.arpfx.platform.entity.po.BizOrder" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO biz_order (order_no, user_id, order_type, effect_id, tier, amount, status)
+        VALUES (#{orderNo}, #{userId}, #{orderType}, #{effectId}, #{tier}, #{amount}, #{status})
+    </insert>
+
+    <select id="selectByOrderNo" resultType="com.arpfx.platform.entity.po.BizOrder">
+        SELECT <include refid="Base_Column_List"/>
+        FROM biz_order
+        WHERE order_no = #{orderNo} AND is_deleted = 0
+    </select>
+
+    <select id="selectById" resultType="com.arpfx.platform.entity.po.BizOrder">
+        SELECT <include refid="Base_Column_List"/>
+        FROM biz_order
+        WHERE id = #{id} AND is_deleted = 0
+    </select>
+
+    <select id="selectByUser" resultType="com.arpfx.platform.entity.po.BizOrder">
+        SELECT <include refid="Base_Column_List"/>
+        FROM biz_order
+        WHERE user_id = #{userId} AND is_deleted = 0
+        ORDER BY id DESC
+    </select>
+
+    <update id="updateStatus">
+        UPDATE biz_order SET status = #{status}, update_time = NOW()
+        WHERE id = #{id} AND status = #{fromStatus} AND is_deleted = 0
+    </update>
+
+    <select id="selectAll" resultType="com.arpfx.platform.entity.po.BizOrder">
+        SELECT <include refid="Base_Column_List"/>
+        FROM biz_order
+        WHERE is_deleted = 0
+        ORDER BY id DESC
+    </select>
+</mapper>

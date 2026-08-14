@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AR 手势粒子交互</title>
+  <link rel="stylesheet" href="/src/style.css" />
+  <link rel="stylesheet" href="/src/nav.css" />
+</head>
+<body>
+  <header id="site-nav"></header>
+  <main id="app"></main>
+  <video id="webcam" autoplay playsinline muted></video>
+  <div id="scene"></div>
+  <div id="hint">请授权摄像头，然后伸出手</div>
+
+  <input id="photo-input" type="file" accept="image/*" multiple hidden />
+  <input id="particle-photo-input" type="file" accept="image/*" hidden />
+  <input id="audio-input" type="file" accept="audio/*" hidden />
+
+  <!-- 特效与控制面板 -->
+  <div id="panel" class="panel">
+    <div class="panel-header">
+      <span>特效与控制</span>
+      <button id="panel-collapse" type="button">收起</button>
+    </div>
+    <div class="panel-body">
+      <div class="panel-row">
+        <label>特效模式</label>
+        <select id="effect-mode">
+          <option value="galaxy">宇宙星系</option>
+          <option value="ocean">海水潮流</option>
+          <option value="photoParticle">粒子图片</option>
+        </select>
+      </div>
+      <div class="panel-row">
+        <label>粒子大小 <span id="size-val">1.0</span></label>
+        <input id="size-factor" type="range" min="0.4" max="3" step="0.1" value="1" />
+      </div>
+      <div class="panel-row">
+        <label>流动速度 <span id="speed-val">1.0</span></label>
+        <input id="speed-factor" type="range" min="0.2" max="5" step="0.1" value="1" />
+      </div>
+      <div class="panel-row">
+        <label>光晕强度 <span id="bloom-val">0.7</span></label>
+        <input id="bloom-strength" type="range" min="0" max="3" step="0.1" value="0.7" />
+      </div>
+      <div class="panel-row">
+        <label>音乐</label>
+        <div class="panel-inline">
+          <button id="toggle-audio" type="button">开启音乐</button>
+          <select id="audio-select" title="选择音频">
+            <option value="default">zhoujielunwith.ogg（默认）</option>
+            <option value="__upload__">上传音频…</option>
+          </select>
+        </div>
+      </div>
+      <div class="panel-row">
+        <label>操作</label>
+        <div class="panel-grid">
+          <button id="toggle-bg" type="button">显示背景</button>
+          <button id="toggle-record" type="button">开始录制</button>
+          <button id="upload-photos" type="button">上传图片</button>
+          <button id="upload-particle-photo" type="button">粒子图片</button>
+        </div>
+      </div>
+      <div class="panel-row panel-actions">
+        <button id="reset-state" type="button">重置</button>
+        <button id="restore-state" type="button" disabled>还原</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

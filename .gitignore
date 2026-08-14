@@ -1,0 +1,20 @@
+# 依赖
+node_modules/
+
+# 后端构建产物
+target/
+
+# 前端构建产物
+dist/
+
+# 日志
+*.log
+
+# 临时检查文件
+dbcheck.txt
+tblcheck.txt
+
+# IDE / 系统
+.idea/
+.vscode/
+.DS_Store

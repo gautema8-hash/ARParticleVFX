@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: arpfx-platform
+  profiles:
+    active: dev
+
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.arpfx.platform.entity.po
+  configuration:
+    map-underscore-to-camel-case: true
+
+pagehelper:
+  helper-dialect: postgresql
+  reasonable: true
+  support-methods-arguments: true
+
+# 应用自定义配置
+app:
+  cors:
+    # 允许的跨域来源（逗号分隔）。开发环境可保留 *；生产必须改为具体域名，如 https://www.example.com
+    allowed-origins: "*"
