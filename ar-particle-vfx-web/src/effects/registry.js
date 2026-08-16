@@ -34,24 +34,24 @@ export const EFFECTS = [
     params: { sizeFactor: 1, speedFactor: 1, bloomStrength: 0.7 }
   },
 
-  // —— 普通粒子（已实现，自包含 Canvas 2D 引擎，可预览 + 导出）——
-  { id: 'butterfly', name: '蝴蝶粒子', category: 'animal', mode: 'particle', tags: ['普通粒子'], tier: 'free', description: '蝴蝶飞舞轨迹', params: {} },
-  { id: 'fish', name: '游鱼粒子', category: 'animal', mode: 'particle', tags: ['普通粒子'], tier: 'free', description: '鱼群游动轨迹', params: {} },
-  { id: 'bird', name: '飞鸟粒子', category: 'animal', mode: 'particle', tags: ['普通粒子'], tier: 'pro', description: '鸟群迁徙轨迹', params: {} },
+  // —— 高级 3D 粒子（Three.js GPU 点云，可预览 + 导出）——
+  { id: 'butterfly', name: '蝴蝶粒子', category: 'animal', mode: 'particle', tags: ['高级3D', '商用视觉'], tier: 'free', description: '参数化 3D 蝴蝶与蝶群流光形变', params: {} },
+  { id: 'fish', name: '游鱼粒子', category: 'animal', mode: 'particle', tags: ['高级3D', '商用视觉'], tier: 'free', description: '深海 3D 鱼群与空间流场', params: {} },
+  { id: 'bird', name: '飞鸟粒子', category: 'animal', mode: 'particle', tags: ['高级3D', 'Pro'], tier: 'pro', description: '星际飞鸟点云与动态迁徙', params: {} },
 
-  { id: 'petal', name: '花瓣粒子', category: 'flower', mode: 'particle', tags: ['普通粒子'], tier: 'free', description: '花瓣飘落', params: {} },
-  { id: 'sakura', name: '樱花粒子', category: 'flower', mode: 'particle', tags: ['普通粒子'], tier: 'free', description: '樱花纷飞', params: {} },
+  { id: 'petal', name: '花瓣粒子', category: 'flower', mode: 'particle', tags: ['高级3D', '商用视觉'], tier: 'free', description: '流光花瓣 3D 形态与环绕运动', params: {} },
+  { id: 'sakura', name: '樱花粒子', category: 'flower', mode: 'particle', tags: ['高级3D', '商用视觉'], tier: 'free', description: '樱舞幻境与柔和粒子扩散', params: {} },
 
-  { id: 'grid', name: '科技点阵', category: 'geometry', mode: 'particle', tags: ['普通粒子'], tier: 'free', description: '点阵网格波动', params: {} },
-  { id: 'wave', name: '粒子波', category: 'geometry', mode: 'particle', tags: ['普通粒子'], tier: 'pro', description: '几何粒子波动', params: {} },
+  { id: 'grid', name: '科技点阵', category: 'geometry', mode: 'particle', tags: ['高级3D', '商用视觉'], tier: 'free', description: '量子点阵空间网格与波面扫描', params: {} },
+  { id: 'wave', name: '粒子波', category: 'geometry', mode: 'particle', tags: ['高级3D', 'Pro'], tier: 'pro', description: '能量波场与三维起伏曲面', params: {} },
 
-  { id: 'snow', name: '雪花粒子', category: 'festival', mode: 'particle', tags: ['普通粒子'], tier: 'free', description: '雪花飘落', params: {} },
-  { id: 'firework', name: '烟花粒子', category: 'festival', mode: 'particle', tags: ['普通粒子', '点击触发'], tier: 'pro', description: '点击绽放烟花', params: {} },
+  { id: 'snow', name: '雪花粒子', category: 'festival', mode: 'particle', tags: ['高级3D', '商用视觉'], tier: 'free', description: '冰晶雪域与空间雪幕', params: {} },
+  { id: 'firework', name: '烟花粒子', category: 'festival', mode: 'particle', tags: ['高级3D', '点击爆破'], tier: 'pro', description: '盛典烟火三维爆破与扩散', params: {} },
 
-  { id: 'rain', name: '雨滴粒子', category: 'nature', mode: 'particle', tags: ['普通粒子'], tier: 'free', description: '雨滴下落', params: {} },
-  { id: 'firefly', name: '萤火虫粒子', category: 'nature', mode: 'particle', tags: ['普通粒子'], tier: 'free', description: '萤火虫飞舞', params: {} },
+  { id: 'rain', name: '雨滴粒子', category: 'nature', mode: 'particle', tags: ['高级3D', '商用视觉'], tier: 'free', description: '霓虹雨幕与纵深光线', params: {} },
+  { id: 'firefly', name: '萤火虫粒子', category: 'nature', mode: 'particle', tags: ['高级3D', '商用视觉'], tier: 'free', description: '萤火星尘与空间漂浮光点', params: {} },
 
-  { id: 'nebula', name: '星云粒子', category: 'tech', mode: 'particle', tags: ['普通粒子'], tier: 'pro', description: '科技星云', params: {} }
+  { id: 'nebula', name: '星云粒子', category: 'tech', mode: 'particle', tags: ['高级3D', 'Pro'], tier: 'pro', description: '深空星云与旋涡点云', params: {} }
 ];
 
 export function getEffect(id) {

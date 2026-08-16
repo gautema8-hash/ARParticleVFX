@@ -1,6 +1,7 @@
 // src/nav.js
 // 顶部导航栏：数据驱动渲染 + 交互（下拉 / 汉堡 / 移动端手风琴）
 import { isLoggedIn, getUser } from './api.js';
+import { toggleTheme } from './ui.js';
 
 const MENUS = [
   { id: 'effects', label: '特效中心', href: '#/effects', children: [
@@ -13,8 +14,8 @@ const MENUS = [
     { label: '科技粒子', href: '#/effects?category=tech' }
   ]},
   { id: 'ar', label: 'WebAR实景', href: '#/ar', children: [
-    { label: '手势交互', href: '#/ar?type=gesture' },
-    { label: '人像粒子', href: '#/ar?type=portrait' },
+    { label: '手势交互', href: '#/demo?mode=galaxy' },
+    { label: '人像粒子', href: '#/demo?mode=photoParticle' },
     { label: '图像识别', href: '#/ar?type=marker' },
     { label: 'AR 专题', href: '#/ar' }
   ]},
@@ -27,7 +28,8 @@ const MENUS = [
   { id: 'tools', label: '工具箱', href: '#/tools', children: [
     { label: '代码压缩', href: '#/tools/compress' },
     { label: '颜色拾取', href: '#/tools/color' },
-    { label: '参数生成器', href: '#/tools/params' }
+    { label: '参数生成器', href: '#/tools/params' },
+    { label: 'DIY 特效', href: '#/tools/diy' }
   ]},
   { id: 'help', label: '帮助中心', href: '#/help', children: [
     { label: '使用教程', href: '#/help/tutorial' },
@@ -80,6 +82,7 @@ function buildNav() {
   actions.className = 'nav-actions';
   actions.innerHTML =
     '<button class="nav-search" type="button" aria-label="搜索">🔍</button>' +
+    '<button class="nav-theme" type="button" aria-label="切换主题" title="切换深空/白昼主题">☼</button>' +
     '<a class="nav-demo" href="#/demo">免费体验</a>' +
     '<a class="nav-login" id="nav-auth" href="#/login">登录</a>' +
     '<a class="nav-cta" href="#/pricing">开通会员</a>';
@@ -97,6 +100,12 @@ function buildNav() {
 
 function bindNavEvents(nav) {
   const burger = nav.querySelector('.nav-burger');
+  const themeButton = nav.querySelector('.nav-theme');
+  themeButton.addEventListener('click', () => {
+    const day = toggleTheme();
+    themeButton.textContent = day ? '☾' : '☼';
+    themeButton.title = day ? '切换深空主题' : '切换白昼主题';
+  });
 
   // 移动端：汉堡开关
   burger.addEventListener('click', () => {
@@ -128,6 +137,10 @@ export function initNav(container) {
   const nav = buildNav();
   container.replaceChildren(nav);
   bindNavEvents(nav);
+  const themeButton = nav.querySelector('.nav-theme');
+  const isDay = document.body.classList.contains('theme-day');
+  themeButton.textContent = isDay ? '☾' : '☼';
+  themeButton.title = isDay ? '切换深空主题' : '切换白昼主题';
   syncAuth();
   window.addEventListener('auth:change', syncAuth);
   return nav;

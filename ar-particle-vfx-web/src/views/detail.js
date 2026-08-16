@@ -45,23 +45,29 @@ export function renderDetail(app, id) {
   // 普通粒子特效：内嵌实时预览（自包含 iframe）
   if (e.mode === 'particle') {
     const iframe = document.createElement('iframe');
-    iframe.style.cssText = 'width:100%;height:340px;border:none;border-radius:10px;background:#0a0a12';
-    iframe.setAttribute('sandbox', 'allow-scripts');
-    iframe.srcdoc = buildEffectHTML(e);
+    // 所有普通粒子均升级为 Three.js 3D 点云，使用更高预览区域。
+    iframe.style.cssText = 'width:100%;height:560px;border:none;border-radius:10px;background:#050816';
+    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+    iframe.setAttribute('allow', 'camera; microphone');
     app.querySelector('#preview-box').appendChild(iframe);
+    // 异步填充：蝴蝶需内联 Three.js 源码实现离线可用
+    buildEffectHTML(e).then((html) => { iframe.srcdoc = html; });
   }
 
   // 绑定工具栏事件
   app.querySelector('#btn-copy').addEventListener('click', async () => {
-    const ok = await copyCode(buildSingleFileHTML(id));
+    const html = await buildSingleFileHTML(id);
+    const ok = await copyCode(html);
     showToast(ok ? '已复制到剪贴板，粘贴到 .html 即可运行' : '复制失败，请手动选择代码');
   });
-  app.querySelector('#btn-html').addEventListener('click', () => {
-    downloadCode(e.name, buildSingleFileHTML(id), 'html');
+  app.querySelector('#btn-html').addEventListener('click', async () => {
+    const html = await buildSingleFileHTML(id);
+    downloadCode(e.name, html, 'html');
     showToast('已导出 HTML 文件');
   });
-  app.querySelector('#btn-txt').addEventListener('click', () => {
-    downloadCode(e.name, buildSingleFileHTML(id), 'txt');
+  app.querySelector('#btn-txt').addEventListener('click', async () => {
+    const html = await buildSingleFileHTML(id);
+    downloadCode(e.name, html, 'txt');
     showToast('已导出 TXT 文件');
   });
   const favBtn = app.querySelector('#btn-fav');
@@ -121,4 +127,3 @@ export function renderDetail(app, id) {
     }
   });
 }
-

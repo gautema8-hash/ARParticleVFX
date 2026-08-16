@@ -513,3 +513,25 @@ button:disabled {
   color: #fff;
   font-family: inherit;
 }
+
+/* 全站点击水花反馈与高级玻璃按钮 */
+.ui-ripple-host { position: relative; overflow: hidden; isolation: isolate; }
+.ui-ripple { position: absolute; z-index: 5; pointer-events: none; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.75) 0, rgba(103,232,249,.42) 24%, rgba(168,85,247,.18) 48%, transparent 72%); transform: scale(0); animation: ui-ripple .72s cubic-bezier(.1,.7,.2,1) forwards; }
+@keyframes ui-ripple { 0% { opacity: .95; transform: scale(.05); } 65% { opacity: .55; transform: scale(1); } 100% { opacity: 0; transform: scale(1.16); } }
+
+body.theme-day { background: #eaf8ff; }
+body.theme-day #app { background: #eaf8ff; color: #172554; }
+body.theme-day .page { color: #172554; }
+body.theme-day .muted, body.theme-day .card-desc { color: #52627e; }
+body.theme-day .card, body.theme-day .code-tabs, body.theme-day .preview-box { background: rgba(255,255,255,.68); border-color: rgba(14,116,144,.16); box-shadow: 0 12px 30px rgba(30,64,175,.08); }
+body.theme-day .card h3, body.theme-day .section-title { color: #172554; }
+body.theme-day .tag, body.theme-day .chip { color: #075985; border-color: rgba(14,116,144,.22); background: rgba(125,211,252,.18); }
+body.theme-day .chip-active { color: #fff; border-color: transparent; background: linear-gradient(135deg,#0891b2,#7c3aed); }
+body.theme-day .btn { color: #172554; background: rgba(255,255,255,.7); border-color: rgba(14,116,144,.2); box-shadow: 0 5px 15px rgba(30,64,175,.07); }
+body.theme-day .btn-primary { color: #fff; background: linear-gradient(135deg,#0891b2,#7c3aed); border: 0; }
+
+/* 统一按钮语言：玻璃底、霓虹边缘、悬浮抬升和水花承载层 */
+.btn, button, .chip { position: relative; overflow: hidden; transition: transform .24s ease, box-shadow .24s ease, border-color .24s ease, background .24s ease; }
+.btn:hover:not(:disabled), button:hover:not(:disabled), .chip:hover { transform: translateY(-2px); border-color: rgba(103,232,249,.7); box-shadow: 0 9px 24px rgba(34,211,238,.14), inset 0 0 18px rgba(255,255,255,.06); }
+.btn-primary:hover:not(:disabled) { box-shadow: 0 12px 32px rgba(168,85,247,.34), 0 0 24px rgba(34,211,238,.18); }
+.chip-active { box-shadow: 0 8px 24px rgba(139,92,246,.28); }

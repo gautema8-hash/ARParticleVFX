@@ -83,6 +83,20 @@ export function initRouter(app, demoUI = {}) {
       return;
     }
 
+    // 工具箱子页：#/tools/compress 等
+    if (seg[0] === 'tools') {
+      setTitle(TITLES['/tools']);
+      renderTools(app, seg[1]);
+      return;
+    }
+
+    // 帮助中心子页：#/help/tutorial 等
+    if (seg[0] === 'help') {
+      setTitle(TITLES['/help']);
+      renderHelp(app, seg[1]);
+      return;
+    }
+
     setTitle(TITLES[path] || TITLES['/']);
     (routes[path] || routes['/'])(app, params);
   }

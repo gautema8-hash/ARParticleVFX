@@ -2,7 +2,9 @@
 import { listEffects } from '../effects/registry.js';
 import { showToast } from '../lib/toast.js';
 
-export function renderAR(app) {
+export function renderAR(app, params) {
+  const type = params && params.get ? params.get('type') : null;
+  const markerActive = type === 'marker';
   const arEffects = listEffects({ category: 'ar' });
 
   const cards = arEffects.map((e) => `
@@ -27,7 +29,7 @@ export function renderAR(app) {
       <div class="grid grid-3">
         <div class="card"><h3>👋 手势交互</h3><p class="card-desc">张开/捏合/握拳驱动粒子</p></div>
         <div class="card"><h3>🖼️ 人像粒子</h3><p class="card-desc">上传照片，重构 5 万粒子人像</p></div>
-        <div class="card"><h3>📷 图像识别</h3><p class="card-desc">识别海报/名片触发特效（后续）</p></div>
+        <div class="card" style="${markerActive ? 'border-color:#22d3ee;box-shadow:0 0 24px rgba(34,211,238,.45)' : ''}"><h3>📷 图像识别</h3><p class="card-desc">${markerActive ? '图像识别功能即将上线，敬请期待' : '识别海报/名片触发特效（后续）'}</p></div>
       </div>
 
       <h3 style="margin-top:32px">手机扫码体验</h3>

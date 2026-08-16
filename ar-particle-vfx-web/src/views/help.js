@@ -1,5 +1,5 @@
 // src/views/help.js — 帮助中心（使用教程 / 授权说明 / 常见问题）
-export function renderHelp(app) {
+export function renderHelp(app, section = 'tutorial') {
   app.innerHTML = `
     <div class="page">
       <h2 class="section-title">帮助中心</h2>
@@ -61,6 +61,9 @@ export function renderHelp(app) {
     render(tab.dataset.help);
   }));
 
-  render('tutorial');
+  // 根据子路由初始化对应节（默认「使用教程」）
+  const initial = SECTIONS[section] ? section : 'tutorial';
+  tabs.forEach((t) => t.classList.toggle('chip-active', t.dataset.help === initial));
+  render(initial);
 }
 

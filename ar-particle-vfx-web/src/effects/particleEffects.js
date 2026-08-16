@@ -1,113 +1,72 @@
-// src/effects/particleEffects.js
-// 普通粒子特效引擎：为 12 款特效生成「自包含、零依赖、可独立运行」的 HTML
-// mode: fall(下落) | float(漂浮) | swarm(群游) | grid(网格波动) | burst(点击爆炸) | vortex(漩涡)
+// 高级 3D 粒子特效引擎：所有普通粒子统一使用 Three.js GPU 点云。
+// 参考「高级特效.txt」实现：参数化形态、目标坐标 LERP、扩散物理场、爆破、颜色和全屏控制。
+// 正式商用部署时建议把 Three.js CDN 替换为企业自有静态资源地址。
 
 const CFG = {
-  snow:      { mode: 'fall',   colors: ['#ffffff', '#e0f2fe'], count: 180, size: [1.5, 4], speed: [0.5, 1.6], sway: [0.3, 1.0], shape: 'circle' },
-  rain:      { mode: 'fall',   colors: ['#38bdf8', '#0ea5e9'], count: 220, size: [10, 16],  speed: [9, 14],    sway: [0, 0],       shape: 'line' },
-  petal:     { mode: 'fall',   colors: ['#f9a8d4', '#f472b6', '#fbcfe8'], count: 70, size: [4, 7], speed: [0.6, 1.4], sway: [1.0, 2.0], shape: 'ellipse', spin: true },
-  sakura:    { mode: 'fall',   colors: ['#fecdd3', '#fda4af', '#fecaca'], count: 130, size: [2, 4.5], speed: [0.8, 1.8], sway: [0.6, 1.6], shape: 'ellipse', spin: true },
-  butterfly: { mode: 'swarm',  colors: ['#f97316', '#ec4899', '#a855f7', '#fbbf24'], count: 40, size: [3, 6], speed: [0.8, 2.0], shape: 'wings' },
-  fish:      { mode: 'swarm',  colors: ['#22d3ee', '#38bdf8', '#0ea5e9'], count: 55, size: [4, 8], speed: [0.8, 2.2], shape: 'fish' },
-  bird:      { mode: 'swarm',  colors: ['#e5e7eb', '#f3f4f6', '#9ca3af'], count: 60, size: [3, 5], speed: [1.2, 2.6], shape: 'bird' },
-  firefly:   { mode: 'float',  colors: ['#a3e635', '#fde047'], count: 90, size: [2, 4], speed: [0.3, 1.0], shape: 'glow' },
-  grid:      { mode: 'grid',   colors: ['#22d3ee'], count: 0, size: [1.5, 3], speed: [1, 1], shape: 'circle' },
-  wave:      { mode: 'grid',   colors: ['#a855f7', '#22d3ee'], count: 0, size: [2, 4], speed: [1.5, 1.5], shape: 'circle' },
-  firework:  { mode: 'burst',  colors: ['#f87171', '#fbbf24', '#34d399', '#60a5fa', '#f472b6'], count: 90, size: [1.5, 3], speed: [2, 6], shape: 'circle' },
-  nebula:    { mode: 'vortex', colors: ['#a855f7', '#22d3ee', '#8b5cf6', '#ec4899'], count: 420, size: [1, 3], speed: [0.4, 1.4], shape: 'glow' }
+  snow: { label: '冰晶雪域', colors: ['#ffffff','#dff6ff','#7dd3fc'], preset: 'snow', count: 9000, size: .11, speed: .75, spread: 55 },
+  rain: { label: '霓虹雨幕', colors: ['#38bdf8','#0ea5e9','#67e8f9'], preset: 'rain', count: 8500, size: .10, speed: 1.55, spread: 50 },
+  petal: { label: '流光花瓣', colors: ['#f9a8d4','#f472b6','#fbcfe8','#fb7185'], preset: 'flower', count: 9000, size: .13, speed: .55, spread: 62 },
+  sakura: { label: '樱舞幻境', colors: ['#fecdd3','#fda4af','#fecaca','#f5d0fe'], preset: 'flower', count: 9000, size: .12, speed: .7, spread: 70 },
+  butterfly: { label: '幻彩蝶群', colors: ['#f97316','#ec4899','#a855f7','#fbbf24'], preset: 'butterfly', count: 10000, size: .13, speed: .85, spread: 68 },
+  fish: { label: '深海鱼群', colors: ['#0f4c5c','#1d8a99','#67c5c7','#d7f9f1'], preset: 'fish', count: 10000, size: .12, speed: .65, spread: 60 },
+  bird: { label: '星际飞鸟', colors: ['#f8fafc','#e2e8f0','#94a3b8','#475569'], preset: 'bird', count: 9500, size: .11, speed: .9, spread: 65 },
+  firefly: { label: '萤火星尘', colors: ['#a3e635','#fde047','#bef264','#fef08a'], preset: 'firefly', count: 8500, size: .12, speed: .35, spread: 65 },
+  grid: { label: '量子点阵', colors: ['#22d3ee','#67e8f9','#818cf8'], preset: 'grid', count: 10000, size: .09, speed: .8, spread: 50 },
+  wave: { label: '能量波场', colors: ['#a855f7','#22d3ee','#c084fc','#38bdf8'], preset: 'wave', count: 10000, size: .10, speed: 1, spread: 58 },
+  firework: { label: '盛典烟火', colors: ['#f87171','#fbbf24','#34d399','#60a5fa','#f472b6'], preset: 'firework', count: 10000, size: .11, speed: .9, spread: 75 },
+  nebula: { label: '深空星云', colors: ['#a855f7','#22d3ee','#8b5cf6','#ec4899'], preset: 'nebula', count: 10000, size: .11, speed: .55, spread: 62 }
 };
 
-// 通用粒子引擎（注入到生成的 HTML 中）
 const ENGINE = `
-var c=document.getElementById('c'),x=c.getContext('2d');
-function resize(){c.width=innerWidth;c.height=innerHeight} resize();addEventListener('resize',resize);
-var N=__COUNT__,MODE='__MODE__',SHAPE='__SHAPE__',SPIN=__SPIN__;
-var COLORS=__COLORS__,SIZE_MIN=__SIZE_MIN__,SIZE_MAX=__SIZE_MAX__,SPD_MIN=__SPD_MIN__,SPD_MAX=__SPD_MAX__,SWAY_MIN=__SWAY_MIN__,SWAY_MAX=__SWAY_MAX__;
-var ps=[],bursts=[];
-function rnd(a,b){return a+Math.random()*(b-a)}
-function pick(arr){return arr[(Math.random()*arr.length)|0]}
-function makeParticle(ox,oy){
-  var p={x:ox!==undefined?ox:rnd(0,c.width),y:oy!==undefined?oy:rnd(0,c.height),
-    size:rnd(SIZE_MIN,SIZE_MAX),color:pick(COLORS),age:rnd(0,6.28),sway:rnd(SWAY_MIN,SWAY_MAX),spd:rnd(SPD_MIN,SPD_MAX)};
-  if(MODE==='fall'){p.y=-p.size;p.vy=rnd(1,2);p.vx=rnd(-0.3,0.3);}
-  else if(MODE==='float'){p.vx=rnd(-1,1)*0.4;p.vy=rnd(-1,1)*0.4;}
-  else if(MODE==='swarm'){var a=rnd(0,6.28);p.cx=rnd(0,c.width);p.cy=rnd(0,c.height);p.r=rnd(20,70);p.a=a;p.va=rnd(0.01,0.04)*p.spd;}
-  else if(MODE==='vortex'){var r=rnd(20,Math.min(c.width,c.height)*0.5);var an=rnd(0,6.28);p.cx=c.width/2;p.cy=c.height/2;p.r=r;p.an=an;p.va=rnd(0.005,0.02)*p.spd;}
-  return p;
-}
-if(MODE==='grid'){var gap=__GAP__;for(var gx=0;gx<c.width+gap;gx+=gap){for(var gy=0;gy<c.height+gap;gy+=gap){ps.push({x:gx,y:gy,baseX:gx,baseY:gy,size:rnd(SIZE_MIN,SIZE_MAX),color:pick(COLORS)});}}}
-else{for(var i=0;i<N;i++)ps.push(makeParticle());}
-function update(){
-  for(var i=0;i<ps.length;i++){var p=ps[i];p.age+=0.02;
-    if(MODE==='fall'){p.y+=p.vy*(1+p.spd*0.4);p.x+=Math.sin(p.age*p.sway)*0.6;if(p.y>c.height+p.size){p.y=-p.size;p.x=rnd(0,c.width);}}
-    else if(MODE==='float'){p.x+=Math.sin(p.age)*p.sway*0.5;p.y+=Math.cos(p.age*1.3)*p.sway*0.4;p.x+=p.vx;p.y+=p.vy;
-      if(p.x<0||p.x>c.width||p.y<0||p.y>c.height){p.vx*=-1;p.vy*=-1;p.x=Math.max(0,Math.min(c.width,p.x));p.y=Math.max(0,Math.min(c.height,p.y));}}
-    else if(MODE==='swarm'){p.a+=p.va;p.cx+=p.spd;if(p.cx>c.width+80)p.cx=-80;if(p.cx<-80)p.cx=c.width+80;p.x=p.cx+Math.cos(p.a)*p.r;p.y=p.cy+Math.sin(p.a)*p.r*0.4;}
-    else if(MODE==='vortex'){p.an+=p.va;p.r-=0.15;if(p.r<5){p.r=rnd(40,Math.min(c.width,c.height)*0.5);}p.x=p.cx+Math.cos(p.an)*p.r;p.y=p.cy+Math.sin(p.an)*p.r*0.6;}
-    else if(MODE==='grid'){p.x=p.baseX+Math.sin(p.baseY*0.02+p.age)*8;p.y=p.baseY+Math.cos(p.baseX*0.02+p.age)*8;}
-  }
-  for(var b=0;b<bursts.length;b++){var bu=bursts[b];bu.age++;for(var j=0;j<bu.parts.length;j++){var q=bu.parts[j];q.x+=q.vx;q.y+=q.vy;q.vy+=0.05;q.life-=0.015;}if(bu.age>90)bursts.splice(b--,1);}
-}
-function draw(){
-  for(var i=0;i<ps.length;i++){var p=ps[i];var al=1;
-    if(MODE==='float')al=0.4+0.6*Math.abs(Math.sin(p.age*2));
-    x.globalAlpha=al;
-    if(SHAPE==='circle'){x.fillStyle=p.color;x.beginPath();x.arc(p.x,p.y,p.size,0,6.283);x.fill();}
-    else if(SHAPE==='line'){x.strokeStyle=p.color;x.lineWidth=1.5;x.beginPath();x.moveTo(p.x,p.y);x.lineTo(p.x-p.size*0.3,p.y-p.size);x.stroke();}
-    else if(SHAPE==='ellipse'){x.save();x.translate(p.x,p.y);x.rotate(SPIN?Math.sin(p.age)*0.8:0);x.fillStyle=p.color;x.beginPath();x.ellipse(0,0,p.size,p.size*0.6,0,0,6.283);x.fill();x.restore();}
-    else if(SHAPE==='glow'){var g=x.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size*4);g.addColorStop(0,p.color);g.addColorStop(1,'transparent');x.fillStyle=g;x.beginPath();x.arc(p.x,p.y,p.size*4,0,6.283);x.fill();}
-    else if(SHAPE==='wings'){x.fillStyle=p.color;x.beginPath();x.ellipse(p.x-Math.sin(p.age*6)*3,p.y,3,p.size*0.8,0,0,6.283);x.ellipse(p.x+Math.sin(p.age*6)*3,p.y,3,p.size*0.8,0,0,6.283);x.fill();}
-    else if(SHAPE==='fish'){x.save();x.translate(p.x,p.y);x.fillStyle=p.color;x.beginPath();x.ellipse(0,0,p.size,p.size*0.45,0,0,6.283);x.fill();x.beginPath();x.moveTo(p.size,0);x.lineTo(p.size*1.7,p.size*0.5);x.lineTo(p.size*1.7,-p.size*0.5);x.fill();x.restore();}
-    else if(SHAPE==='bird'){x.strokeStyle=p.color;x.lineWidth=1.5;var fl=Math.sin(p.age*8)*3;x.beginPath();x.moveTo(p.x-fl,p.y-2);x.quadraticCurveTo(p.x,p.y,p.x+fl,p.y-2);x.stroke();}
-  }
-  for(var b=0;b<bursts.length;b++){var bu=bursts[b];for(var j=0;j<bu.parts.length;j++){var q=bu.parts[j];x.globalAlpha=Math.max(0,q.life);x.fillStyle=q.color;x.beginPath();x.arc(q.x,q.y,q.size,0,6.283);x.fill();}}
-  x.globalAlpha=1;
-}
-if(MODE==='burst'){addEventListener('click',function(e){var parts=[];for(var i=0;i<N;i++){var a=rnd(0,6.28);var v=rnd(SPD_MIN,SPD_MAX);parts.push({x:e.clientX,y:e.clientY,vx:Math.cos(a)*v,vy:Math.sin(a)*v,size:rnd(SIZE_MIN,SIZE_MAX),color:pick(COLORS),life:1});}bursts.push({age:0,parts:parts});});}
-function loop(){x.fillStyle='rgba(10,10,18,0.2)';x.fillRect(0,0,c.width,c.height);update();draw();requestAnimationFrame(loop);}
-loop();
+(function(){
+  'use strict';
+  var THREE=window.THREE;
+  if(!THREE){document.body.innerHTML='<div style="padding:32px;color:#fff;font:16px system-ui">Three.js 加载失败，请检查网络或替换为企业静态资源地址。</div>';return;}
+  var PRESET='__PRESET__',LABEL='__LABEL__',N=__COUNT__,COLORS=__COLORS__,BASE_SIZE=__SIZE__,SPEED=__SPEED__,DEFAULT_SPREAD=__SPREAD__;
+  var state={color:COLORS[0],scale:1,spread:DEFAULT_SPREAD,burst:0};
+  var clock=new THREE.Clock(),scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0x050816,.035);
+  var camera=new THREE.PerspectiveCamera(52,innerWidth/innerHeight,.1,1000);camera.position.set(0,0,24);
+  var renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.setSize(innerWidth,innerHeight);renderer.setClearColor(0x050816,1);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;document.body.appendChild(renderer.domElement);
+  var css=document.createElement('style');css.textContent=\`*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050816;color:#eef2ff;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif}canvas{display:block}.pfx-brand{position:fixed;left:24px;top:22px;z-index:3;font-size:15px;font-weight:800;letter-spacing:.08em;text-shadow:0 0 18px #38bdf8}.pfx-brand small{display:block;margin-top:6px;color:#94a3b8;font-size:10px;font-weight:500;letter-spacing:.15em}.pfx-panel{position:fixed;right:24px;top:22px;z-index:3;width:272px;padding:18px;border:1px solid rgba(255,255,255,.14);border-radius:18px;background:rgba(8,12,30,.68);box-shadow:0 18px 55px rgba(0,0,0,.45),inset 0 1px rgba(255,255,255,.12);backdrop-filter:blur(18px)}.pfx-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:12px;color:#cbd5e1}.pfx-live{color:#34d399;font-size:10px}.pfx-row{display:flex;justify-content:space-between;align-items:center;margin:13px 0 7px;font-size:12px;color:#cbd5e1}.pfx-val{color:#67e8f9;font-weight:800}.pfx-range{width:100%;accent-color:#22d3ee}.pfx-color{width:32px;height:25px;padding:0;border:0;background:transparent}.pfx-btn{width:100%;padding:10px;border:1px solid rgba(255,255,255,.15);border-radius:10px;background:rgba(255,255,255,.06);color:#fff;cursor:pointer}.pfx-btn:hover{border-color:#22d3ee;background:rgba(34,211,238,.12)}.pfx-btn.primary{border:0;background:linear-gradient(135deg,#22d3ee,#8b5cf6);font-weight:800;box-shadow:0 8px 25px rgba(34,211,238,.2)}.pfx-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.pfx-gesture{margin-top:10px;color:#94a3b8;font-size:10px;line-height:1.5}.pfx-hint{position:fixed;left:24px;bottom:22px;z-index:3;color:#94a3b8;font-size:11px}.pfx-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#34d399;box-shadow:0 0 10px #34d399;margin-right:6px}@media(max-width:640px){.pfx-panel{left:16px;right:16px;top:auto;bottom:16px;width:auto;padding:13px}.pfx-brand{left:16px;top:16px}.pfx-hint{display:none}}\`;document.head.appendChild(css);
+  var brand=document.createElement('div');brand.className='pfx-brand';brand.innerHTML=LABEL+'<small>3D COMMERCIAL PARTICLE SYSTEM</small>';document.body.appendChild(brand);
+  var panel=document.createElement('div');panel.className='pfx-panel';panel.innerHTML='<div class="pfx-title"><b>高级 3D 粒子控制台</b><span class="pfx-live"><i class="pfx-dot"></i>LIVE</span></div><div class="pfx-row"><b>主色彩</b><input class="pfx-color" type="color" value="'+state.color+'"></div><div class="pfx-row"><b>空间缩放</b><span class="pfx-val" data-v="scale">1.00x</span></div><input class="pfx-range" data-i="scale" type="range" min=".55" max="1.8" step=".01" value="1"><div class="pfx-row"><b>扩散场</b><span class="pfx-val" data-v="spread">'+state.spread.toFixed(0)+'</span></div><input class="pfx-range" data-i="spread" type="range" min="0" max="100" step="1" value="'+state.spread+'"><div class="pfx-actions"><button class="pfx-btn primary" data-a="burst">✦ 爆炸</button><button class="pfx-btn" data-a="restore">↺ 还原</button><button class="pfx-btn" data-a="camera">✋ 手势</button><button class="pfx-btn" data-a="full">全屏</button></div><div class="pfx-gesture" data-v="gesture">手势：未开启 · 张开手掌爆炸，握拳还原</div>';document.body.appendChild(panel);
+  var color=panel.querySelector('.pfx-color'),scaleInput=panel.querySelector('[data-i="scale"]'),spreadInput=panel.querySelector('[data-i="spread"]');
+  color.addEventListener('input',function(){state.color=color.value;material.color.set(state.color);});scaleInput.addEventListener('input',function(){state.scale=+scaleInput.value;panel.querySelector('[data-v="scale"]').textContent=state.scale.toFixed(2)+'x';});spreadInput.addEventListener('input',function(){state.spread=+spreadInput.value;panel.querySelector('[data-v="spread"]').textContent=state.spread.toFixed(0);});panel.querySelector('[data-a="burst"]').onclick=function(){state.burst=100;};panel.querySelector('[data-a="restore"]').onclick=function(){state.burst=0;state.spread=0;spreadInput.value=0;panel.querySelector('[data-v="spread"]').textContent='0';};panel.querySelector('[data-a="full"]').onclick=function(){if(!document.fullscreenElement)document.documentElement.requestFullscreen?.();else document.exitFullscreen?.();};
+  function rnd(a,b){return a+Math.random()*(b-a)}
+  var target=new Float32Array(N*3),pos=new Float32Array(N*3),vel=new Float32Array(N*3),phase=new Float32Array(N),size=new Float32Array(N),particleColors=new Float32Array(N*3);
+  function point(i,x,y,z){var k=i*3,targetColor=new THREE.Color(COLORS[(Math.random()*COLORS.length)|0]);target[k]=x;target[k+1]=y;target[k+2]=z;particleColors[k]=targetColor.r;particleColors[k+1]=targetColor.g;particleColors[k+2]=targetColor.b;var m=Math.hypot(x,y,z)||1;vel[k]=x/m*rnd(.7,1.8);vel[k+1]=y/m*rnd(.7,1.8);vel[k+2]=z/m*rnd(.7,1.8);phase[i]=rnd(0,6.283);size[i]=rnd(.65,1.5);}
+  function makeShape(){for(var i=0;i<N;i++){var a=Math.random()*6.283,r,x,y,z,q,cols=100,ix,iz;
+    if(PRESET==='snow'||PRESET==='rain'){point(i,rnd(-8,8),rnd(-7,7),rnd(-4,4));}
+    else if(PRESET==='flower'){a=Math.random()*6.283;r=Math.sqrt(Math.random())*6;q=1.2+.8*Math.cos(6*a);point(i,Math.cos(a)*r*q,Math.sin(a)*r*q,Math.sin(a*3)*1.6+rnd(-.5,.5));}
+    else if(PRESET==='butterfly'){q=Math.sqrt(Math.random());var side=Math.random()<.5?-1:1;if(Math.random()<.16)point(i,rnd(-.45,.45),rnd(-3.8,3.8),rnd(-.4,.4));else point(i,side*(1.1+Math.cos(a)*4.8*q),1.1+Math.sin(a)*3.8*q,-Math.abs(Math.cos(a))*1.5+rnd(-.3,.3));}
+    else if(PRESET==='fish'){var fishGroup=i%40,fishLocal=i%250,fishCx=Math.sin(fishGroup*1.7)*5.5,fishCy=Math.cos(fishGroup*1.1)*2.8,fishCz=Math.sin(fishGroup*2.3)*4;var fx,fy,fz;if(fishLocal<190){var fa=Math.random()*6.283,fr=Math.cbrt(Math.random());fx=(Math.random()-.5)*2.8;fy=Math.cos(fa)*fr*1.0;fz=Math.sin(fa)*fr*.65;}else{fx=1.25+Math.random()*1.5;fy=(Math.random()-.5)*(1.5-fx*.35);fz=(Math.random()-.5)*(1.2-fx*.25);}point(i,fishCx+fx,fishCy+fy,fishCz+fz);}
+    else if(PRESET==='bird'){var birdGroup=i%36,birdLocal=i%265,birdCx=Math.sin(birdGroup*1.4)*6,birdCy=Math.cos(birdGroup*.9)*3,birdCz=Math.sin(birdGroup*1.8)*4;var bx,by,bz;if(birdLocal<55){bx=rnd(-.35,.35);by=rnd(-.35,.35);bz=rnd(-.25,.25);}else{var wingSide=birdLocal%2?-1:1,wingT=Math.random(),wingSpan=2.2*wingT;bx=wingSide*wingSpan;by=.15+wingT*.9+Math.sin(wingT*3.14)*.35;bz=wingSide*.25*wingT;}point(i,birdCx+bx,birdCy+by,birdCz+bz);}
+    else if(PRESET==='firefly'){a=Math.random()*6.283;r=Math.cbrt(Math.random())*7;point(i,Math.cos(a)*r,Math.sin(a)*r,Math.sin(a*3)*2);}
+    else if(PRESET==='grid'||PRESET==='wave'){ix=i%cols;iz=Math.floor(i/cols);x=(ix/cols-.5)*16;y=(iz/cols-.5)*12;point(i,x,y,PRESET==='wave'?Math.sin(x*1.6)*Math.cos(y*1.4):0);}
+    else if(PRESET==='firework'){a=Math.random()*6.283;var u=Math.random()*2-1,s=Math.sqrt(1-u*u);r=Math.pow(Math.random(),.45)*8;point(i,Math.cos(a)*s*r,u*r,Math.sin(a)*s*r);}
+    else {a=Math.random()*6.283;r=Math.pow(Math.random(),.55)*8;point(i,Math.cos(a)*r,Math.sin(a*3)*1.5+rnd(-2,2),Math.sin(a)*r);}
+  }for(var j=0;j<N*3;j++)pos[j]=target[j]+rnd(-10,10);}
+  makeShape();var geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(pos,3));geometry.setAttribute('aSize',new THREE.BufferAttribute(size,1));geometry.setAttribute('color',new THREE.BufferAttribute(particleColors,3));
+  function makeTexture(){var cv=document.createElement('canvas');cv.width=cv.height=64;var g=cv.getContext('2d'),gr=g.createRadialGradient(32,32,0,32,32,32);gr.addColorStop(0,'#fff');gr.addColorStop(.18,'rgba(255,255,255,.95)');gr.addColorStop(.5,'rgba(255,255,255,.28)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(0,0,64,64);return new THREE.CanvasTexture(cv);}
+  var material=new THREE.PointsMaterial({color:0xffffff,vertexColors:true,size:BASE_SIZE,map:makeTexture(),transparent:true,opacity:.92,depthWrite:false,blending:THREE.AdditiveBlending,sizeAttenuation:true});var points=new THREE.Points(geometry,material);scene.add(points);
+  var stars=new THREE.Points(new THREE.BufferGeometry(),new THREE.PointsMaterial({color:0x64748b,size:.025,transparent:true,opacity:.55})),starPos=new Float32Array(900*3);for(var si=0;si<900;si++){starPos[si*3]=rnd(-25,25);starPos[si*3+1]=rnd(-16,16);starPos[si*3+2]=rnd(-15,5);}stars.geometry.setAttribute('position',new THREE.BufferAttribute(starPos,3));scene.add(stars);
+  var down=false,lastX=0,lastY=0;renderer.domElement.addEventListener('pointerdown',function(e){down=true;lastX=e.clientX;lastY=e.clientY;});addEventListener('pointerup',function(){down=false;});addEventListener('pointermove',function(e){if(!down)return;points.rotation.y+=(e.clientX-lastX)*.006;points.rotation.x+=(e.clientY-lastY)*.006;lastX=e.clientX;lastY=e.clientY;});renderer.domElement.addEventListener('wheel',function(e){camera.position.z=Math.max(12,Math.min(45,camera.position.z+e.deltaY*.015));});addEventListener('resize',function(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+  var gestureText=panel.querySelector('[data-v="gesture"]'),camButton=panel.querySelector('[data-a="camera"]'),handVideo=document.createElement('video'),handStream=null,hands=null,handBusy=false,lastHandState='';handVideo.autoplay=true;handVideo.playsInline=true;handVideo.muted=true;handVideo.style.display='none';document.body.appendChild(handVideo);
+  function handSpread(lms){var w=lms[0],tips=[4,8,12,16,20],sum=0;for(var h=0;h<tips.length;h++)sum+=Math.hypot(lms[tips[h]].x-w.x,lms[tips[h]].y-w.y);return sum/tips.length;}
+  function handleHands(result){var list=result.multiHandLandmarks||[];if(!list.length){gestureText.textContent='手势：未检测到 · 张开手掌爆炸，握拳还原';return;}var open=handSpread(list[0])>.34;if(list.length===2){var a=list[0][9],b=list[1][9],dist=Math.hypot(a.x-b.x,a.y-b.y);state.scale=Math.max(.55,Math.min(1.8,.45+dist*4));scaleInput.value=state.scale;panel.querySelector('[data-v="scale"]').textContent=state.scale.toFixed(2)+'x';}if(open&&lastHandState!=='open'){state.burst=100;lastHandState='open';gestureText.textContent='手势：张开手掌 · 粒子爆炸';}else if(!open&&lastHandState!=='fist'){state.burst=0;state.spread=0;spreadInput.value=0;panel.querySelector('[data-v="spread"]').textContent='0';lastHandState='fist';gestureText.textContent='手势：握拳 · 粒子还原';}else if(lastHandState==='open'){gestureText.textContent='手势：张开手掌 · 持续扩散';}else{gestureText.textContent='手势：握拳 · 已还原';}}
+  async function handLoop(){if(!handStream||!hands||handBusy)return;handBusy=true;try{if(handVideo.readyState>=2)await hands.send({image:handVideo});}catch(e){}handBusy=false;if(handStream)requestAnimationFrame(handLoop);}
+  async function toggleHands(){if(handStream){handStream.getTracks().forEach(function(t){t.stop();});handStream=null;handVideo.srcObject=null;camButton.textContent='✋ 手势';gestureText.textContent='手势：已关闭';return;}if(typeof Hands==='undefined'){gestureText.textContent='手势：模型加载失败，请检查网络';return;}try{handStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:640,height:480},audio:false});handVideo.srcObject=handStream;await handVideo.play();hands=new Hands({locateFile:function(file){return 'https://cdn.jsdelivr.net/npm/@mediapipe/hands/'+file;}});hands.setOptions({maxNumHands:2,modelComplexity:1,minDetectionConfidence:.65,minTrackingConfidence:.65});hands.onResults(handleHands);camButton.textContent='✋ 关闭手势';gestureText.textContent='手势：已开启 · 张开手掌爆炸，握拳还原';handLoop();}catch(e){handStream=null;gestureText.textContent='手势：摄像头不可用，请检查 HTTPS 和权限';}}
+  camButton.onclick=toggleHands;
+  function update(dt,t){state.burst*=Math.max(0,1-dt*1.8);var spread=state.spread*.018+state.burst*.018,arr=geometry.attributes.position.array;points.scale.x+=(state.scale-points.scale.x)*Math.min(1,dt*4);points.scale.y=points.scale.x;points.scale.z=points.scale.x;for(var i=0;i<N;i++){var k=i*3,tx=target[k],ty=target[k+1],tz=target[k+2],wave=Math.sin(t*2+phase[i])*.03;if(PRESET==='snow'){ty=((ty-t*SPEED*2.5+7)%14+14)%14-7;tx+=Math.sin(t*.8+phase[i])*.18;}if(PRESET==='rain'){ty=((ty-t*SPEED*5+7)%14+14)%14-7;tx+=Math.sin(ty*2+phase[i])*.06;}if(PRESET==='flower'){var ang=Math.atan2(ty,tx)+t*SPEED*.12,rr=Math.hypot(tx,ty);tx=Math.cos(ang)*rr;ty=Math.sin(ang)*rr+Math.sin(t+phase[i])*.2;}if(PRESET==='butterfly'){ty+=Math.sin(t*8+phase[i])*Math.abs(tx)*.06;tz+=Math.cos(t*3+phase[i])*.08;}if(PRESET==='fish'||PRESET==='bird'){tx+=Math.sin(t*SPEED+phase[i])*1.2;tz+=Math.cos(t*SPEED*.8+phase[i])*1.2;}if(PRESET==='firefly'){tx+=Math.sin(t*SPEED+phase[i])*.8;ty+=Math.cos(t*SPEED*1.3+phase[i])*.8;}if(PRESET==='grid'||PRESET==='wave')tz+=Math.sin(tx*1.3+t*SPEED)*.45+Math.cos(ty*1.4+t*SPEED*.8)*.35;if(PRESET==='nebula'){var ca=Math.cos(t*SPEED*.25),sa=Math.sin(t*SPEED*.25),ox=tx;tx=ox*ca-ty*sa;ty=ox*sa+ty*ca;}arr[k]+=(tx+vel[k]*spread+wave-arr[k])*Math.min(1,dt*5.5);arr[k+1]+=(ty+vel[k+1]*spread-arr[k+1])*Math.min(1,dt*5.5);arr[k+2]+=(tz+vel[k+2]*spread-arr[k+2])*Math.min(1,dt*5.5);}geometry.attributes.position.needsUpdate=true;points.rotation.z+=dt*.045*SPEED;stars.rotation.y+=dt*.01;}
+  (function loop(){requestAnimationFrame(loop);var dt=Math.min(.05,clock.getDelta()),t=clock.elapsedTime;update(dt,t);renderer.render(scene,camera);})();
+})();
 `;
 
-function cfgOr(id) { return CFG[id] || CFG.snow; }
+function cfgOr(id){return CFG[id]||CFG.snow;}
 
-export function buildEffectHTML(effect) {
-  const c = cfgOr(effect.id);
-  const gap = effect.id === 'grid' ? 26 : 30;
-  const code = ENGINE
-    .replace(/__COUNT__/g, String(c.count))
-    .replace(/__MODE__/g, c.mode)
-    .replace(/__SHAPE__/g, c.shape)
-    .replace(/__SPIN__/g, c.spin ? 'true' : 'false')
-    .replace(/__COLORS__/g, JSON.stringify(c.colors))
-    .replace(/__SIZE_MIN__/g, c.size[0])
-    .replace(/__SIZE_MAX__/g, c.size[1])
-    .replace(/__SPD_MIN__/g, c.speed[0])
-    .replace(/__SPD_MAX__/g, c.speed[1])
-    .replace(/__SWAY_MIN__/g, c.sway[0])
-    .replace(/__SWAY_MAX__/g, c.sway[1])
-    .replace(/__GAP__/g, String(gap));
-
-  const isFree = effect.tier === 'free' || effect.tier === 0;
-  const copyright = isFree
-    ? '<!-- 免费版：仅供学习使用，商用请购买授权 -->'
-    : '<!-- Pro 特效：商用需会员授权 -->';
-
-  return `<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${effect.name} - 粒子特效</title>
-<style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0a0a12}canvas{display:block}</style>
-</head>
-<body>
-<canvas id="c"></canvas>
-${copyright}
-<script>
-${code}
-</script>
-</body>
-</html>`;
+export async function buildEffectHTML(effect){
+  var c=cfgOr(effect.id),code=ENGINE.replace(/__PRESET__/g,c.preset).replace(/__LABEL__/g,c.label).replace(/__COUNT__/g,String(c.count)).replace(/__COLORS__/g,JSON.stringify(c.colors)).replace(/__SIZE__/g,String(c.size)).replace(/__SPEED__/g,String(c.speed)).replace(/__SPREAD__/g,String(c.spread));
+  var free=effect.tier==='free'||effect.tier===0;
+  var copyright=free?'<!-- 免费版：仅供学习使用，商用请购买授权 -->':'<!-- Pro 特效：商用需会员授权 -->';
+  return '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>'+effect.name+' - 高级3D粒子特效</title><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050816}</style></head><body>'+copyright+'<script src="https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script><script>'+code.replace(/<\/script/gi,'<\\/script')+'</script></body></html>';
 }
-
-

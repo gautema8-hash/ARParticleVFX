@@ -6,6 +6,7 @@ import { createRecorder } from './recorder.js';
 import { createSegmenter, segmentImage } from './segmenter.js';
 import { initNav } from './nav.js';
 import { initRouter } from './router.js';
+import { initUiEffects } from './ui.js';
 import defaultAudioUrl from '../zhoujielunwith.ogg';
 
 const video = document.getElementById('webcam');
@@ -36,6 +37,7 @@ const bloomVal = document.getElementById('bloom-val');
 
 // 初始化顶部导航栏
 initNav(document.getElementById('site-nav'));
+initUiEffects();
 
 // 初始化 hash 路由（渲染各页面视图到 #app；#/demo 展示原始粒子 Demo）
 initRouter(document.getElementById('app'), { panel, hint });

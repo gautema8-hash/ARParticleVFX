@@ -2,7 +2,7 @@
 import { getEffect } from './effects/registry.js';
 import { buildEffectHTML } from './effects/particleEffects.js';
 
-// 生成一个可独立运行的通用 Canvas 2D 粒子演示（零依赖，双击即可运行）
+// AR 特效暂时保留轻量占位导出；普通粒子由高级 Three.js 3D 引擎生成。
 function buildParticleDemo(effect) {
   const isAR = effect.mode !== null;
   const color = isAR ? '#a855f7' : '#22d3ee';
@@ -42,13 +42,13 @@ function buildParticleDemo(effect) {
   </script>`;
 }
 
-export function buildSingleFileHTML(effectId, opts = {}) {
+export async function buildSingleFileHTML(effectId, opts = {}) {
   const effect = getEffect(effectId);
   if (!effect) return '';
 
-  // 普通粒子特效：生成真实可运行的粒子动画 HTML（自包含、零依赖）
+  // 普通粒子特效：生成高级 3D 点云动画 HTML。
   if (effect.mode === 'particle') {
-    return buildEffectHTML(effect);
+    return await buildEffectHTML(effect);
   }
 
   // AR 特效（依赖摄像头 + Three.js + MediaPipe）：暂无独立导出，保留占位提示
