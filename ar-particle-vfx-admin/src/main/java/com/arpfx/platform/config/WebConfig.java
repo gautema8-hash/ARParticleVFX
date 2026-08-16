@@ -35,7 +35,8 @@ public class WebConfig implements WebMvcConfigurer {
                         "/api/user/register",
                         "/api/user/login",
                         "/api/user/reset-password",
-                        "/api/order/pay/callback"
+                        "/api/order/pay/callback",
+                        "/api/assistant/chat"
                 );
 
         registry.addInterceptor(new TokenInterceptor(redisUtils))
@@ -44,6 +45,8 @@ public class WebConfig implements WebMvcConfigurer {
                         "/api/user/register",
                         "/api/user/login",
                         "/api/user/reset-password",
+                        // 助手使用用户在浏览器中配置的模型 API Key，保留限流但不强制平台登录
+                        "/api/assistant/chat",
                         "/api/effect/list",
                         "/api/effect/*"
                 );

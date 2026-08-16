@@ -2,6 +2,7 @@
 // 顶部导航栏：数据驱动渲染 + 交互（下拉 / 汉堡 / 移动端手风琴）
 import { isLoggedIn, getUser } from './api.js';
 import { toggleTheme } from './ui.js';
+import { initAssistant } from './assistant.js';
 
 const MENUS = [
   { id: 'effects', label: '特效中心', href: '#/effects', children: [
@@ -101,6 +102,7 @@ function buildNav() {
 function bindNavEvents(nav) {
   const burger = nav.querySelector('.nav-burger');
   const themeButton = nav.querySelector('.nav-theme');
+  nav.querySelector('.nav-search').addEventListener('click', () => window.dispatchEvent(new CustomEvent('assistant:open')));
   themeButton.addEventListener('click', () => {
     const day = toggleTheme();
     themeButton.textContent = day ? '☾' : '☼';
@@ -141,6 +143,7 @@ export function initNav(container) {
   const isDay = document.body.classList.contains('theme-day');
   themeButton.textContent = isDay ? '☾' : '☼';
   themeButton.title = isDay ? '切换深空主题' : '切换白昼主题';
+  initAssistant();
   syncAuth();
   window.addEventListener('auth:change', syncAuth);
   return nav;

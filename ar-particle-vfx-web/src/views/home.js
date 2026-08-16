@@ -1,4 +1,5 @@
-// 首页：鼠标驱动的伪 3D 银河粒子主视觉
+// 首页：鼠标驱动的 3D 银河粒子主视觉
+import * as THREE from 'three';
 let rafId = null;
 let cleanupGalaxy = null;
 
@@ -24,9 +25,15 @@ function initCyberGalaxy(canvas) {
   const createParticle = () => {
     const arm = Math.floor(Math.random() * 4);
     const radius = Math.pow(Math.random(), 0.65);
-    return { radius, angle: arm * Math.PI / 2 + radius * 10.5 + (Math.random() - 0.5) * 0.9, z: Math.random() * 1.2 + 0.15, depth: Math.random() * 2 - 1, size: Math.random() * 1.8 + 0.35, color: palette[(Math.random() * palette.length) | 0], speed: 0.14 + Math.random() * 0.28, twinkle: Math.random() * 6.28, prevX: 0, prevY: 0 };
+    return { radius, angle: arm * Math.PI / 2 + radius * 10.5 + (Math.random() - 0.5) * 0.9, z: Math.random() * 1.2 + 0.15, depth: Math.random() * 2 - 1, size: Math.random() * 1.2 + 0.18, color: palette[(Math.random() * palette.length) | 0], speed: 0.14 + Math.random() * 0.28, twinkle: Math.random() * 6.28, prevX: 0, prevY: 0 };
   };
-  for (let i = 0; i < 1150; i++) particles.push(createParticle());
+  for (let i = 0; i < 2200; i++) particles.push(createParticle());
+  const planets = [
+    { radius: .18, angle: .7, z: .8, size: 13, color: '#e6a36e', accent: '#f7d6a4', ring: false, speed: .06 },
+    { radius: .32, angle: 3.2, z: .52, size: 22, color: '#4d86d8', accent: '#b9e7ff', ring: false, speed: .035 },
+    { radius: .43, angle: 5.4, z: .35, size: 16, color: '#d98b58', accent: '#ffd2a1', ring: true, speed: .025 },
+    { radius: .55, angle: 2.15, z: .2, size: 8, color: '#b2d6e8', accent: '#fff7d6', ring: false, speed: .08 }
+  ];
   const createBurst = (x, y) => {
     for (let i = 0; i < 110; i++) { const a = Math.random() * Math.PI * 2; const speed = 1.2 + Math.random() * 5.8; bursts.push({ x, y, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed, life: 1, size: .8 + Math.random() * 2.4, color: palette[(Math.random() * palette.length) | 0] }); }
   };
@@ -44,6 +51,22 @@ function initCyberGalaxy(canvas) {
     ctx.save(); ctx.translate(cx, cy); ctx.rotate(-0.16 + mouse.x * .05);
     for (let i = 0; i < 7; i++) { ctx.globalAlpha = day ? .035 : .055; ctx.strokeStyle = i % 2 ? '#22d3ee' : '#a855f7'; ctx.lineWidth = 32 + i * 18; ctx.beginPath(); ctx.ellipse(0, 0, scale * (.34 + i * .08), scale * (.11 + i * .025), 0, 0, Math.PI * 2); ctx.stroke(); }
     ctx.restore();
+    // 轨道星球：带高光、阴影、散射光晕和环带，增强宇宙尺度感。
+    for (const planet of planets) {
+      planet.angle += planet.speed * dt;
+      const perspective = 1 / (0.72 + planet.z);
+      const px = cx + Math.cos(planet.angle) * planet.radius * scale * perspective;
+      const py = cy + Math.sin(planet.angle) * planet.radius * scale * .39 * perspective;
+      const pr = Math.max(2, planet.size * perspective);
+      const halo = ctx.createRadialGradient(px - pr * .35, py - pr * .4, pr * .05, px, py, pr * 2.4);
+      halo.addColorStop(0, planet.accent + 'aa'); halo.addColorStop(.25, planet.color + '55'); halo.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.globalAlpha = .8; ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(px, py, pr * 2.4, 0, Math.PI * 2); ctx.fill();
+      if (planet.ring) { ctx.globalAlpha = .62; ctx.strokeStyle = planet.accent; ctx.lineWidth = Math.max(1, pr * .16); ctx.beginPath(); ctx.ellipse(px, py, pr * 1.9, pr * .48, -.18, 0, Math.PI * 2); ctx.stroke(); }
+      const sphere = ctx.createRadialGradient(px - pr * .42, py - pr * .5, pr * .04, px + pr * .18, py + pr * .2, pr * 1.35);
+      sphere.addColorStop(0, '#fff9e8'); sphere.addColorStop(.16, planet.accent); sphere.addColorStop(.52, planet.color); sphere.addColorStop(1, 'rgba(8,12,35,.9)');
+      ctx.globalAlpha = .98; ctx.fillStyle = sphere; ctx.beginPath(); ctx.arc(px, py, pr, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = .4; ctx.strokeStyle = planet.accent; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(px - pr * .12, py - pr * .12, pr * .86, -.8, 1.4); ctx.stroke();
+    }
     for (const p of particles) {
       p.angle += p.speed * dt; p.twinkle += dt * (1.5 + p.speed * 3); p.z += dt * .035; if (p.z > 1.35) p.z = .12;
       const radial = p.radius * scale * (0.95 + p.z * .16), perspective = 1 / (0.7 + p.z), x = cx + Math.cos(p.angle) * radial * perspective + p.depth * width * .08 * mouse.x, y = cy + Math.sin(p.angle) * radial * .39 * perspective + p.depth * height * .055 * mouse.y;
@@ -58,6 +81,51 @@ function initCyberGalaxy(canvas) {
   };
   rafId = requestAnimationFrame(draw);
   return () => { cancelAnimationFrame(rafId); window.removeEventListener('resize', onResize); canvas.removeEventListener('pointermove', onPointerMove); canvas.removeEventListener('pointerleave', onPointerLeave); canvas.removeEventListener('pointerdown', onPointerDown); };
+}
+
+function initThreeGalaxy(canvas) {
+  let renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'high-performance' });
+  } catch {
+    return initCyberGalaxy(canvas);
+  }
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(0x030611, 0.018);
+  const camera = new THREE.PerspectiveCamera(52, 1, 0.1, 1000);
+  camera.position.set(0, 4.2, 20);
+  const galaxy = new THREE.Group();
+  const starLayers = [];
+  const bursts = [];
+  const mouse = { x: 0, y: 0, tx: 0, ty: 0 };
+  const palette = [0x8be9fd, 0x67e8f9, 0xa78bfa, 0xf0abfc, 0xfda4af, 0xfef3c7, 0xffffff];
+  const sprite = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); const grad = g.createRadialGradient(32, 32, 0, 32, 32, 32); grad.addColorStop(0, '#fff'); grad.addColorStop(.12, 'rgba(255,255,255,.98)'); grad.addColorStop(.35, 'rgba(130,220,255,.72)'); grad.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = grad; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
+  const makePoints = (count, mode) => {
+    const positions = new Float32Array(count * 3); const colors = new Float32Array(count * 3); const sizes = new Float32Array(count);
+    const color = new THREE.Color();
+    for (let i = 0; i < count; i++) {
+      const k = i * 3; const arm = i % 5; const radius = mode === 'galaxy' ? Math.pow(Math.random(), .58) * 15 : 7 + Math.random() * 20; const spin = radius * .55 + arm * (Math.PI * 2 / 5); const spread = mode === 'galaxy' ? (Math.random() - .5) * (1.1 + radius * .05) : (Math.random() - .5) * 26;
+      positions[k] = mode === 'galaxy' ? Math.cos(spin) * radius + spread : spread; positions[k + 1] = mode === 'galaxy' ? (Math.random() - .5) * (.7 + radius * .09) : spread * .45; positions[k + 2] = mode === 'galaxy' ? Math.sin(spin) * radius + spread * .55 : spread;
+      color.setHex(palette[(Math.random() * palette.length) | 0]); colors[k] = color.r; colors[k + 1] = color.g; colors[k + 2] = color.b; sizes[i] = mode === 'galaxy' ? .5 + Math.random() * 1.8 : .35 + Math.random() * 1.1;
+    }
+    const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3)); geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3)); geometry.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
+    const material = new THREE.PointsMaterial({ size: mode === 'galaxy' ? .12 : .08, map: sprite, transparent: true, opacity: mode === 'galaxy' ? .92 : .58, vertexColors: true, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true });
+    const points = new THREE.Points(geometry, material); galaxy.add(points); starLayers.push(points); return points;
+  };
+  makePoints(8500, 'galaxy'); makePoints(2600, 'space'); scene.add(galaxy);
+  const core = new THREE.Mesh(new THREE.SphereGeometry(1.3, 32, 32), new THREE.MeshBasicMaterial({ color: 0xffb7e8, transparent: true, opacity: .42, blending: THREE.AdditiveBlending })); scene.add(core);
+  const planets = [];
+  [[-7, 2.1, -4, 1.05, 0x5d8fe8], [6, -1.8, -5, .72, 0xe8a16e], [2.5, 4.2, -9, .42, 0x9bd8e8]].forEach(([x, y, z, r, color]) => { const mesh = new THREE.Mesh(new THREE.SphereGeometry(r, 28, 28), new THREE.MeshStandardMaterial({ color, roughness: .8, metalness: .08, emissive: color, emissiveIntensity: .08 })); mesh.position.set(x, y, z); scene.add(mesh); planets.push(mesh); const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: sprite, color, transparent: true, opacity: .18, blending: THREE.AdditiveBlending, depthWrite: false })); glow.scale.set(r * 4.5, r * 4.5, 1); mesh.add(glow); });
+  scene.add(new THREE.AmbientLight(0x6474ff, 1.8)); const keyLight = new THREE.PointLight(0xffc4ed, 28, 40); keyLight.position.set(-4, 5, 8); scene.add(keyLight);
+  const burst = (event) => { const rect = canvas.getBoundingClientRect(); const x = ((event.clientX - rect.left) / rect.width - .5) * 18; const y = -((event.clientY - rect.top) / rect.height - .5) * 10; for (let i = 0; i < 260; i++) { const material = new THREE.SpriteMaterial({ map: sprite, color: palette[(Math.random() * palette.length) | 0], transparent: true, opacity: 1, blending: THREE.AdditiveBlending, depthWrite: false }); const particle = new THREE.Sprite(material); particle.position.set(x, y, 4); const a = Math.random() * Math.PI * 2; const speed = .04 + Math.random() * .16; particle.userData = { vx: Math.cos(a) * speed, vy: Math.sin(a) * speed, vz: (Math.random() - .5) * speed, life: 1 }; particle.scale.setScalar(.04 + Math.random() * .1); scene.add(particle); bursts.push(particle); } };
+  const resize = () => { const width = canvas.clientWidth || innerWidth; const height = canvas.clientHeight || innerHeight; const dpr = Math.min(devicePixelRatio || 1, 1.75); renderer.setPixelRatio(dpr); renderer.setSize(width, height, false); camera.aspect = width / height; camera.updateProjectionMatrix(); };
+  const onMove = (event) => { const rect = canvas.getBoundingClientRect(); mouse.tx = ((event.clientX - rect.left) / rect.width - .5) * 2; mouse.ty = ((event.clientY - rect.top) / rect.height - .5) * 2; };
+  const onLeave = () => { mouse.tx = 0; mouse.ty = 0; };
+  canvas.addEventListener('pointermove', onMove); canvas.addEventListener('pointerleave', onLeave); canvas.addEventListener('pointerdown', burst); window.addEventListener('resize', resize); resize();
+  let previous = performance.now();
+  const draw = (now) => { const dt = Math.min((now - previous) / 1000, .04); previous = now; mouse.x += (mouse.tx - mouse.x) * dt * 3; mouse.y += (mouse.ty - mouse.y) * dt * 3; galaxy.rotation.y += dt * .018; galaxy.rotation.x = mouse.y * .08; galaxy.position.x = mouse.x * .7; galaxy.position.y = -mouse.y * .35; camera.position.x += (mouse.x * 1.25 - camera.position.x) * dt * 1.7; camera.position.y += (4.2 - mouse.y * 1.1 - camera.position.y) * dt * 1.7; camera.lookAt(0, 0, -2); core.scale.setScalar(1 + Math.sin(now * .002) * .08 + Math.abs(mouse.x) * .08); planets.forEach((planet, index) => { planet.rotation.y += dt * (.08 + index * .03); }); bursts.forEach((particle, index) => { const data = particle.userData; particle.position.x += data.vx; particle.position.y += data.vy; particle.position.z += data.vz; data.life -= dt * 1.5; particle.material.opacity = Math.max(0, data.life); particle.scale.multiplyScalar(.985); if (data.life <= 0) { scene.remove(particle); particle.material.dispose(); bursts.splice(index, 1); } }); renderer.render(scene, camera); rafId = requestAnimationFrame(draw); };
+  rafId = requestAnimationFrame(draw);
+  return () => { cancelAnimationFrame(rafId); window.removeEventListener('resize', resize); canvas.removeEventListener('pointermove', onMove); canvas.removeEventListener('pointerleave', onLeave); canvas.removeEventListener('pointerdown', burst); renderer.dispose(); sprite.dispose(); scene.traverse((object) => { if (object.geometry) object.geometry.dispose(); if (object.material && object.material.dispose) object.material.dispose(); }); };
 }
 
 export function renderHome(app) {
@@ -79,5 +147,5 @@ export function renderHome(app) {
       .home-wrap{--home-text:#f8fafc;--home-muted:#cbd5e1;position:relative;min-height:calc(100vh - 60px);display:flex;align-items:center;justify-content:center;overflow:hidden;background:#030611;color:var(--home-text)}#home-bg{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:crosshair}.home-wrap:after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 50% 50%,transparent 30%,rgba(0,0,0,.38) 100%),linear-gradient(115deg,rgba(0,229,255,.06),transparent 30%,rgba(236,72,153,.08))}.home-hero{position:relative;z-index:1;text-align:center;padding:72px 24px 100px;max-width:980px;pointer-events:none}.home-hero a{pointer-events:auto}.home-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 18px;border-radius:999px;font-size:11px;letter-spacing:3px;color:#67e8f9;background:rgba(8,15,38,.58);border:1px solid rgba(34,211,238,.42);box-shadow:0 0 28px rgba(34,211,238,.18),inset 0 0 18px rgba(34,211,238,.08)}.home-badge span{width:7px;height:7px;border-radius:50%;background:#34d399;box-shadow:0 0 12px #34d399}.home-title{margin:28px 0 18px;font-size:clamp(2.8rem,7vw,6.4rem);font-weight:900;line-height:1.02;letter-spacing:-.06em;text-shadow:0 12px 50px rgba(0,0,0,.36);background:linear-gradient(110deg,#dffaff 0%,#22d3ee 27%,#a78bfa 55%,#fb7185 82%,#fde68a 100%);-webkit-background-clip:text;background-clip:text;color:transparent}.home-title em{font-style:normal;background:linear-gradient(110deg,#22d3ee,#818cf8,#f472b6);-webkit-background-clip:text;background-clip:text;color:transparent}.home-sub{margin:0 0 34px;font-size:clamp(1rem,2vw,1.25rem);color:var(--home-muted);letter-spacing:2px}.home-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}.home-btn{position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:14px;padding:16px 26px;border-radius:14px;font-size:15px;font-weight:800;letter-spacing:.6px;text-decoration:none;transition:transform .25s,box-shadow .25s,border-color .25s}.home-btn b{font-size:18px}.home-btn:hover{transform:translateY(-4px)}.home-btn-primary{color:#fff;background:linear-gradient(110deg,#0891b2,#7c3aed 52%,#ec4899);box-shadow:0 14px 44px rgba(124,58,237,.38),inset 0 1px rgba(255,255,255,.42)}.home-btn-primary:hover{box-shadow:0 18px 54px rgba(236,72,153,.48),0 0 35px rgba(34,211,238,.22)}.home-btn-ghost{color:#bff8ff;background:rgba(8,15,38,.48);border:1px solid rgba(103,232,249,.45);box-shadow:inset 0 0 20px rgba(34,211,238,.08)}.home-btn-ghost:hover{border-color:#67e8f9;background:rgba(34,211,238,.14);box-shadow:0 12px 38px rgba(34,211,238,.2)}.home-hint{margin-top:24px;color:rgba(226,232,240,.62);font-size:11px;letter-spacing:1px}.home-hint i{display:inline-block;width:6px;height:6px;border-radius:50%;background:#f472b6;box-shadow:0 0 12px #f472b6;margin-right:6px}.home-metrics{position:absolute;z-index:2;left:28px;bottom:24px;display:flex;gap:28px}.home-metrics div{display:flex;flex-direction:column;gap:2px}.home-metrics strong{font-size:20px;color:#f8fafc}.home-metrics span{font-size:10px;letter-spacing:1px;color:#94a3b8}.home-corner{position:absolute;z-index:2;color:rgba(148,163,184,.6);font-size:9px;letter-spacing:2px}.home-corner-tl{left:28px;top:28px}.home-corner-br{right:28px;bottom:28px}.home-orbit{position:absolute;z-index:1;pointer-events:none;width:56vw;height:18vw;border:1px solid rgba(103,232,249,.14);border-radius:50%;transform:rotate(-18deg);box-shadow:0 0 28px rgba(34,211,238,.08)}.home-orbit-a{width:62vw}.home-orbit-b{width:42vw;transform:rotate(34deg);border-color:rgba(244,114,182,.13)}body.theme-day .home-wrap{--home-text:#19223d;--home-muted:#3b4a70}.theme-day .home-wrap:after{background:radial-gradient(circle at 50% 50%,transparent 28%,rgba(255,255,255,.24) 100%),linear-gradient(115deg,rgba(14,165,233,.08),transparent 30%,rgba(236,72,153,.1))}.theme-day .home-badge{color:#075985;background:rgba(255,255,255,.58);border-color:rgba(14,116,144,.38)}.theme-day .home-btn-ghost{color:#075985;background:rgba(255,255,255,.48);border-color:rgba(14,116,144,.38)}.theme-day .home-metrics strong{color:#172554}.theme-day .home-corner{color:rgba(30,64,175,.62)}@media(max-width:768px){.home-hero{padding:60px 18px 120px}.home-metrics{left:18px;right:18px;justify-content:space-between;gap:10px}.home-corner{display:none}.home-orbit{width:100vw;height:34vw}}
     </style>
   `;
-  cleanupGalaxy = initCyberGalaxy(app.querySelector('#home-bg'));
+  cleanupGalaxy = initThreeGalaxy(app.querySelector('#home-bg'));
 }

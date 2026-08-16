@@ -3,7 +3,32 @@ import { getEffect } from '../effects/registry.js';
 import { buildSingleFileHTML, copyCode, downloadCode } from '../exporter.js';
 import { buildEffectHTML } from '../effects/particleEffects.js';
 import { showToast } from '../lib/toast.js';
-import { api, isLoggedIn } from '../api.js';
+import { api, getUser, isLoggedIn } from '../api.js';
+
+function canViewSource() {
+  const user = getUser();
+  return !!user && (Number(user.role) === 1 || Number(user.tier) > 0);
+}
+
+function escapeHtml(value) {
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function highlightCode(source, language) {
+  let code = escapeHtml(source);
+  code = code.replace(/(&lt;!--[\s\S]*?--&gt;|\/\/.*?$|\/\*[\s\S]*?\*\/)/gm, '<span class="tok-comment">$1</span>');
+  code = code.replace(/(&quot;.*?&quot;|&#39;.*?&#39;|`.*?`)/g, '<span class="tok-string">$1</span>');
+  if (language === 'html') code = code.replace(/(&lt;\/?)([a-zA-Z][\w-]*)/g, '$1<span class="tok-tag">$2</span>');
+  code = code.replace(/\b(const|let|var|function|return|new|if|else|for|async|await|true|false|null|class|export|import)\b/g, '<span class="tok-keyword">$1</span>');
+  code = code.replace(/\b(THREE|Math|window|document|canvas|renderer|scene|camera)\b/g, '<span class="tok-api">$1</span>');
+  return code;
+}
+
+function sourceParts(html) {
+  const styles = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)].map((m) => m[1].trim()).filter(Boolean);
+  const scripts = [...html.matchAll(/<script(?:[^>]*)>([\s\S]*?)<\/script>/gi)].map((m) => m[1].trim()).filter(Boolean);
+  return { html, css: styles.join('\n\n'), js: scripts[scripts.length - 1] || '' };
+}
 
 export function renderDetail(app, id) {
   const e = getEffect(id);
@@ -25,6 +50,7 @@ export function renderDetail(app, id) {
       ? `<a class="btn btn-primary" href="#/demo?mode=${e.mode}">免费体验</a>`
       : `<span class="btn" style="opacity:.5;pointer-events:none">即将上线</span>`;
 
+  const sourceAccess = e.mode === 'particle' && canViewSource();
   app.innerHTML = `
     <div class="page">
       <h2 class="section-title">${e.name}</h2>
@@ -38,7 +64,12 @@ export function renderDetail(app, id) {
         <button class="btn" id="btn-fav" type="button">收藏</button>
         <button class="btn btn-primary" id="btn-buy" type="button">购买</button>
       </div>
-      <div class="code-tabs">代码展示区（HTML / CSS / JS，后续接入语法高亮）</div>
+      ${sourceAccess ? `
+        <section class="source-panel" id="source-panel">
+          <div class="source-head"><div><span class="source-kicker">MEMBER SOURCE ACCESS</span><h3>特效源代码</h3></div><span class="source-lock">商业授权 · 已解锁</span></div>
+          <div class="source-tabs"><button class="chip chip-active" data-source-tab="html" type="button">HTML</button><button class="chip" data-source-tab="css" type="button">CSS</button><button class="chip" data-source-tab="js" type="button">JS</button></div>
+          <div class="source-code-wrap"><pre><code id="source-code">正在加载源代码…</code></pre></div>
+        </section>` : ''}
     </div>
   `;
 
@@ -50,8 +81,21 @@ export function renderDetail(app, id) {
     iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
     iframe.setAttribute('allow', 'camera; microphone');
     app.querySelector('#preview-box').appendChild(iframe);
-    // 异步填充：蝴蝶需内联 Three.js 源码实现离线可用
-    buildEffectHTML(e).then((html) => { iframe.srcdoc = html; });
+    const htmlPromise = buildEffectHTML(e);
+    htmlPromise.then((html) => {
+      iframe.srcdoc = html;
+      if (!sourceAccess) return;
+      const parts = sourceParts(html);
+      const sourceCode = app.querySelector('#source-code');
+      let activeTab = 'html';
+      const renderSource = () => { sourceCode.innerHTML = highlightCode(parts[activeTab], activeTab); };
+      app.querySelectorAll('[data-source-tab]').forEach((tab) => tab.addEventListener('click', () => {
+        activeTab = tab.dataset.sourceTab;
+        app.querySelectorAll('[data-source-tab]').forEach((item) => item.classList.toggle('chip-active', item === tab));
+        renderSource();
+      }));
+      renderSource();
+    });
   }
 
   // 绑定工具栏事件
