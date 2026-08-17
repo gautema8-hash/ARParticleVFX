@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.arpfx.platform.dao.mapper.LoginLogMapper">
+  <sql id="cols">id,user_id,username,nickname,email,operation,login_time,ip,address,device_type,user_agent,browser,os,success,detail,is_deleted</sql>
+  <insert id="insert" parameterType="com.arpfx.platform.entity.po.SysLoginLog" useGeneratedKeys="true" keyProperty="id">
+    INSERT INTO sys_login_log (user_id,username,nickname,email,operation,login_time,ip,address,device_type,user_agent,browser,os,success,detail)
+    VALUES (#{userId},#{username},#{nickname},#{email},#{operation},COALESCE(#{loginTime},NOW()),#{ip},#{address},#{deviceType},#{userAgent},#{browser},#{os},#{success},#{detail})
+  </insert>
+  <select id="selectRecent" resultType="com.arpfx.platform.entity.po.SysLoginLog">
+    SELECT <include refid="cols"/> FROM sys_login_log WHERE is_deleted=0 AND login_time &gt;= NOW() - INTERVAL '7 days' ORDER BY id DESC
+  </select>
+  <update id="deleteExpired">UPDATE sys_login_log SET is_deleted=1 WHERE login_time &lt; NOW() - (#{days} || ' days')::interval AND is_deleted=0</update>
+</mapper>

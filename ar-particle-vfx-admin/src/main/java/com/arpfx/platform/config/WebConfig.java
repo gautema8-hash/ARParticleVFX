@@ -53,6 +53,10 @@ public class WebConfig implements WebMvcConfigurer {
                         "/api/assistant/chat",
                         "/api/effect/list",
                         "/api/effect/*"
+                        ,"/api/knowledge/list"
+                        ,"/api/knowledge/*/view"
+                        ,"/api/knowledge/*/favorite"
+                        ,"/api/knowledge/*/unfavorite"
                 );
     }
 

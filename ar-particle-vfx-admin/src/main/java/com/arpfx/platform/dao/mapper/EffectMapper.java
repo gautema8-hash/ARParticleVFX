@@ -27,4 +27,5 @@ public interface EffectMapper {
     int deleteLogical(@Param("id") Long id);
     long countAll();
     long countByCategory(@Param("category") String category);
+    long countByStatus(@Param("status") Integer status);
 }

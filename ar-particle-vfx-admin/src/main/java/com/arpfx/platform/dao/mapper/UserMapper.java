@@ -28,11 +28,12 @@ public interface UserMapper {
 
     int updatePassword(@Param("id") Long id, @Param("password") String password);
 
-    List<SysUser> selectAll();
+    List<SysUser> selectAll(@Param("keyword") String keyword);
 
     long countAll();
     long countToday();
     int updateLastLogin(@Param("id") Long id);
     int updateAdmin(@Param("id") Long id, @Param("email") String email, @Param("nickname") String nickname, @Param("tier") Integer tier, @Param("role") Integer role, @Param("status") Integer status);
     int deleteLogical(@Param("id") Long id);
+    int resetPassword(@Param("id") Long id, @Param("password") String password);
 }

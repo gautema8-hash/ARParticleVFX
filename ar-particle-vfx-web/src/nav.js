@@ -1,7 +1,6 @@
 // src/nav.js
 // 顶部导航栏：数据驱动渲染 + 交互（下拉 / 汉堡 / 移动端手风琴）
-import { isLoggedIn, getUser } from './api.js';
-import { toggleTheme } from './ui.js';
+import { isLoggedIn, getUser, clearSession } from './api.js';
 import { initAssistant } from './assistant.js';
 
 const MENUS = [
@@ -19,10 +18,6 @@ const MENUS = [
     { label: '人像粒子', href: '#/demo?mode=photoParticle' },
     { label: 'AR 特效库', href: '#/ar' }
   ]},
-  { id: 'pricing', label: '定价与服务', href: '#/pricing', children: [
-    { label: '套餐定价', href: '#/pricing' },
-    { label: '定制服务', href: '#/enterprise?type=custom' }
-  ]},
   { id: 'tools', label: '工具箱', href: '#/tools', children: [
     { label: '代码压缩', href: '#/tools/compress' },
     { label: '颜色拾取', href: '#/tools/color' },
@@ -33,7 +28,9 @@ const MENUS = [
     { label: '使用教程', href: '#/help/tutorial' },
     { label: '授权说明', href: '#/help/license' },
     { label: '常见问题', href: '#/help/faq' }
-  ]}
+  ]},
+  { id: 'knowledge', label: '科技指南', href: '#/knowledge' },
+  { id: 'contact', label: '联系我们', href: '#/enterprise' }
 ];
 
 function buildNav() {
@@ -79,12 +76,11 @@ function buildNav() {
   const actions = document.createElement('div');
   actions.className = 'nav-actions';
   actions.innerHTML =
-    '<button class="nav-search" type="button" aria-label="搜索">🔍</button>' +
-    '<a class="nav-favorites" href="#/favorites" aria-label="我的收藏" title="我的收藏">♡</a>' +
-    '<button class="nav-theme" type="button" aria-label="切换主题" title="切换深空/白昼主题">☼</button>' +
+    '<a class="nav-favorites nav-text-action" href="#/favorites" aria-label="收藏" title="收藏">收藏</a>' +
     '<a class="nav-demo" href="#/demo">免费体验</a>' +
     '<a class="nav-login" id="nav-auth" href="#/login">登录</a>' +
-    '<a class="nav-cta" href="#/pricing">开通会员</a>';
+    '<a class="nav-cta" href="#/pricing">开通会员</a>' +
+    '<button class="nav-logout" id="nav-logout" type="button">退出登录</button>';
   nav.appendChild(actions);
 
   const burger = document.createElement('button');
@@ -99,13 +95,7 @@ function buildNav() {
 
 function bindNavEvents(nav) {
   const burger = nav.querySelector('.nav-burger');
-  const themeButton = nav.querySelector('.nav-theme');
-  nav.querySelector('.nav-search').addEventListener('click', () => window.dispatchEvent(new CustomEvent('assistant:open')));
-  themeButton.addEventListener('click', () => {
-    const day = toggleTheme();
-    themeButton.textContent = day ? '☾' : '☼';
-    themeButton.title = day ? '切换深空主题' : '切换白昼主题';
-  });
+  nav.querySelector('#nav-logout').addEventListener('click', () => { clearSession(); window.dispatchEvent(new CustomEvent('auth:change')); location.hash = '#/'; });
 
   // 移动端：汉堡开关
   burger.addEventListener('click', () => {
@@ -137,10 +127,6 @@ export function initNav(container) {
   const nav = buildNav();
   container.replaceChildren(nav);
   bindNavEvents(nav);
-  const themeButton = nav.querySelector('.nav-theme');
-  const isDay = document.body.classList.contains('theme-day');
-  themeButton.textContent = isDay ? '☾' : '☼';
-  themeButton.title = isDay ? '切换深空主题' : '切换白昼主题';
   initAssistant();
   syncAuth();
   window.addEventListener('auth:change', syncAuth);
@@ -150,11 +136,14 @@ export function initNav(container) {
 // 登录态联动：已登录显示昵称，未登录显示「登录」
 function syncAuth() {
   const link = document.querySelector('#nav-auth');
+  const logout = document.querySelector('#nav-logout');
   if (!link) return;
   if (isLoggedIn()) {
     const user = getUser();
     link.textContent = user?.nickname || user?.username || '我的';
+    logout?.classList.add('nav-logout-visible');
   } else {
     link.textContent = '登录';
+    logout?.classList.remove('nav-logout-visible');
   }
 }

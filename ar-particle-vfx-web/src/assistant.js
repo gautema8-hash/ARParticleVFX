@@ -1,7 +1,7 @@
 // 智能助手：右侧悬浮对话、模型配置和主题跟随系统
 import './assistant.css';
 import * as THREE from 'three';
-import { getToken, isLoggedIn } from './api.js';
+import { getToken, getUser, isLoggedIn } from './api.js';
 import { showToast } from './lib/toast.js';
 const STORAGE_KEY = 'arpfx_assistant_settings';
 const KEY_STORAGE = 'arpfx_assistant_api_key';
@@ -51,7 +51,8 @@ function renderMarkdown(value) {
 function messageBubble(list, role, content, options = {}) {
   const item = document.createElement('div');
   item.className = `assistant-message assistant-message-${role}`;
-  const label = document.createElement('span'); label.className = 'assistant-message-label'; label.textContent = role === 'user' ? '你' : '粒子助手';
+  const label = document.createElement('span'); label.className = 'assistant-message-label';
+  if (role === 'user') { const user = getUser() || {}; const name = user.nickname || user.username || user.email || '用户'; const avatar = [...name][0] || '你'; label.innerHTML = `<span class="assistant-user-avatar">${escapeHtml(avatar.toUpperCase())}</span><span>${escapeHtml(name)}</span>`; } else label.textContent = '粒子助手';
   const body = document.createElement('div'); body.className = 'assistant-message-body';
   if (role === 'assistant' && !options.loading) body.innerHTML = renderMarkdown(content); else body.textContent = content;
   if (role === 'assistant' && !options.loading) {

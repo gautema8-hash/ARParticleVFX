@@ -4,6 +4,7 @@ import com.arpfx.platform.entity.vo.EffectVO;
 import com.arpfx.platform.entity.vo.OrderVO;
 import com.arpfx.platform.entity.vo.UserVO;
 import com.arpfx.platform.entity.dto.EffectCreateDTO;
+import com.arpfx.platform.entity.dto.TechnicalMailDTO;
 
 import java.util.List;
 import java.util.Map;
@@ -16,7 +17,7 @@ import java.util.Map;
  */
 public interface AdminService {
 
-    List<UserVO> listUsers(Long adminId);
+    List<UserVO> listUsers(Long adminId, String keyword);
 
     List<OrderVO> listOrders(Long adminId);
 
@@ -28,5 +29,7 @@ public interface AdminService {
     Map<String, Object> dashboard(Long adminId);
     void updateUser(Long adminId, Long userId, Map<String, Object> payload);
     void deleteUser(Long adminId, Long userId);
+    void resetUserPassword(Long adminId, Long userId);
+    Map<String, Object> sendTechnicalMail(Long adminId, TechnicalMailDTO dto);
     void deleteEffect(Long adminId, Long effectId);
 }

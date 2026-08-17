@@ -33,8 +33,8 @@
     </select>
 
     <insert id="insert" parameterType="com.arpfx.platform.entity.po.BizEffect" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO biz_effect (effect_code, effect_name, category, mode, tags, tier, description, cover_url, cover_base64, source_html, price, status, create_by, update_by)
-        VALUES (#{effectCode}, #{effectName}, #{category}, #{mode}, #{tags}, #{tier}, #{description}, #{coverUrl}, #{coverBase64}, #{sourceHtml}, #{price}, #{status}, #{createBy}, #{updateBy})
+        INSERT INTO biz_effect (effect_code, effect_name, category, mode, tags, tier, description, cover_url, cover_base64, source_html, price, status, publish_time, offline_time, create_by, update_by)
+        VALUES (#{effectCode}, #{effectName}, #{category}, #{mode}, #{tags}, #{tier}, #{description}, #{coverUrl}, #{coverBase64}, #{sourceHtml}, #{price}, #{status}, NOW(), NOW(), #{createBy}, #{updateBy})
     </insert>
 
     <select id="selectAll" resultType="com.arpfx.platform.entity.po.BizEffect">
@@ -45,10 +45,11 @@
     </select>
 
     <update id="updateStatus">
-        UPDATE biz_effect SET status = #{status}, update_time = NOW(), publish_time = CASE WHEN #{status}=1 THEN COALESCE(publish_time,NOW()) ELSE publish_time END, offline_time = CASE WHEN #{status}=0 THEN NOW() ELSE offline_time END
+        UPDATE biz_effect SET status = #{status}, update_time = NOW(), publish_time = CASE WHEN #{status}=1 THEN NOW() ELSE publish_time END, offline_time = CASE WHEN #{status}=0 THEN NOW() ELSE offline_time END
         WHERE id = #{id} AND is_deleted = 0
     </update>
     <update id="deleteLogical">UPDATE biz_effect SET is_deleted=1, status=0, update_time=NOW() WHERE id=#{id} AND is_deleted=0</update>
     <select id="countAll" resultType="long">SELECT COUNT(*) FROM biz_effect WHERE is_deleted=0</select>
     <select id="countByCategory" resultType="long">SELECT COUNT(*) FROM biz_effect WHERE is_deleted=0 AND category=#{category}</select>
+    <select id="countByStatus" resultType="long">SELECT COUNT(*) FROM biz_effect WHERE is_deleted=0 AND status=#{status}</select>
 </mapper>

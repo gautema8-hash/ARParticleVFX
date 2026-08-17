@@ -1,11 +1,17 @@
 // src/views/login.js — 炫酷高级商用登录 / 注册 / 忘记密码 / 会员中心
 import { api, setToken, setUser, getUser, clearSession, isLoggedIn } from '../api.js';
 import { showToast } from '../lib/toast.js';
+import * as THREE from 'three';
 
 function tierText(tier) {
   if (tier === 2) return '企业版';
   if (tier === 1) return '个人 Pro';
   return '免费版';
+}
+
+function avatarText(user) {
+  const name = user?.nickname || user?.username || user?.email || '用户';
+  return [...name].find((char) => /[\u4e00-\u9fa5A-Za-z]/.test(char)) || name[0] || '用';
 }
 
 // 专属炫酷样式（玻璃拟态 + 渐变光效 + 漂浮光晕）
@@ -50,6 +56,7 @@ const STYLE = `
   .auth-meta{color:#9ca3af;font-size:13px;margin:14px 0 22px;word-break:break-all;}
   .auth-out{display:inline-block;padding:11px 28px;border-radius:11px;border:1px solid rgba(255,255,255,.2);color:#e5e7eb;background:rgba(255,255,255,.05);cursor:pointer;transition:all .25s;}
   .auth-out:hover{background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.5);color:#fca5a5;}
+  .auth-space-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:.82;}
 `;
 
 export function renderLogin(app) {
@@ -58,6 +65,7 @@ export function renderLogin(app) {
 
   app.innerHTML = `
     <div class="auth-wrap">
+      <canvas class="auth-space-canvas" id="auth-space-canvas"></canvas>
       <div class="auth-bg-glow auth-glow-1"></div>
       <div class="auth-bg-glow auth-glow-2"></div>
       <div class="auth-card">
@@ -67,6 +75,8 @@ export function renderLogin(app) {
     </div>
   `;
 
+  initAuthSpace(app.querySelector('#auth-space-canvas'));
+
   const box = app.querySelector('#auth-box');
 
   // —— 已登录：会员中心（含管理员徽章） ——
@@ -75,7 +85,7 @@ export function renderLogin(app) {
     const isCreator = currentUser?.role === 2;
     box.innerHTML = `
       <div class="auth-user">
-        <div class="auth-avatar">${isAdmin ? '🛡️' : '🧑‍💻'}</div>
+        <div class="auth-avatar">${avatarText(currentUser)}</div>
         <p class="auth-name">${currentUser?.nickname || currentUser?.username || ''}</p>
         <div>
           ${isAdmin ? '<span class="auth-badge badge-admin">管理员</span>' : isCreator ? '<span class="auth-badge badge-tier">创作者</span>' : ''}
@@ -83,18 +93,12 @@ export function renderLogin(app) {
         </div>
         <p class="auth-meta">账号：${currentUser?.username || ''}${currentUser?.email ? ' · ' + currentUser.email : ''}</p>
         <div>
-          ${isAdmin || isCreator ? '<a class="auth-out" href="#/admin" style="margin-right:10px;text-decoration:none">创作后台</a>' : ''}
+          ${isAdmin || isCreator ? '<a class="auth-out" href="#/admin" style="margin-right:10px;text-decoration:none">管理后台</a>' : ''}
+          <a class="auth-out" href="#/feedback" style="margin-right:10px;text-decoration:none">用户反馈</a>
           <a class="auth-out" href="#/orders" style="margin-right:10px;text-decoration:none">我的订单</a>
-          <button class="auth-out" id="btn-logout" type="button">退出登录</button>
         </div>
       </div>
     `;
-    box.querySelector('#btn-logout').addEventListener('click', () => {
-      clearSession();
-      showToast('已退出登录');
-      window.dispatchEvent(new CustomEvent('auth:change'));
-      renderLogin(app);
-    });
     return;
   }
 
@@ -194,4 +198,14 @@ export function renderLogin(app) {
     const codeButton = box.querySelector('#btn-code'); codeButton.disabled = true;
     try { await api.sendEmailCode({ email, purpose: mode === 'register' ? 'register' : 'login' }); showToast('验证码已发送，请查收邮箱'); let seconds = 60; const timer = setInterval(() => { codeButton.textContent = `${--seconds}s`; if (seconds <= 0) { clearInterval(timer); codeButton.disabled = false; codeButton.textContent = '发送验证码'; } }, 1000); } catch (err) { showToast(err.message); codeButton.disabled = false; }
   });
+}
+
+function initAuthSpace(canvas) {
+  if (!canvas) return;
+  const scene=new THREE.Scene(), camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,.1,1000); camera.position.z=7;
+  const renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true}); renderer.setPixelRatio(Math.min(devicePixelRatio,1.6)); renderer.setSize(innerWidth,innerHeight);
+  const count=1800, pos=new Float32Array(count*3), colors=new Float32Array(count*3), palette=[new THREE.Color('#22d3ee'),new THREE.Color('#a855f7'),new THREE.Color('#f472b6')];
+  for(let i=0;i<count;i++){const r=2+Math.random()*12,a=Math.random()*Math.PI*2;pos[i*3]=Math.cos(a)*r;pos[i*3+1]=(Math.random()-.5)*8;pos[i*3+2]=Math.sin(a)*r-3;const c=palette[i%3];colors[i*3]=c.r;colors[i*3+1]=c.g;colors[i*3+2]=c.b;}
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));geo.setAttribute('color',new THREE.BufferAttribute(colors,3));const stars=new THREE.Points(geo,new THREE.PointsMaterial({size:.035,vertexColors:true,transparent:true,opacity:.8,blending:THREE.AdditiveBlending}));scene.add(stars);
+  let t=0;const loop=()=>{t+=.002;stars.rotation.y=t*.28;stars.rotation.x=Math.sin(t)*.08;renderer.render(scene,camera);requestAnimationFrame(loop);};loop();addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
 }

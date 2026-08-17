@@ -12,7 +12,7 @@ import javax.annotation.Resource;
 
 /**
  * 数据初始化：确保默认管理员账号存在（幂等）。
- * 用户名 admin，初始密码 Admin123，role=1（管理员），tier=2（企业版）。
+ * 用户名 admin，初始密码 Xcl123..，role=1（管理员），tier=2（企业版）。
  *
  * @author arpfx
  * @date 2026-08-14
@@ -32,7 +32,7 @@ public class DataInitializer implements CommandLineRunner {
         if (admin == null) {
             SysUser user = new SysUser();
             user.setUsername("admin");
-            user.setPassword(passwordEncoder.encode("Admin123"));
+            user.setPassword(passwordEncoder.encode("Xcl123.."));
             user.setEmail("xuyangtogether@163.com");
             user.setNickname("管理员");
             user.setTier(TierEnum.ENTERPRISE.getCode());

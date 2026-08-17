@@ -156,17 +156,18 @@ public class UserServiceImpl implements UserService {
     public void sendEmailCode(EmailCodeDTO dto) {
         String purpose = dto.getPurpose() == null ? "login" : dto.getPurpose();
         String code = String.format("%06d", (int) (Math.random() * 1000000));
-        redisUtils.set("email:code:" + purpose + ":" + dto.getEmail().toLowerCase(), code, 300);
+        redisUtils.set("email:code:" + purpose + ":" + dto.getEmail().toLowerCase(), code, 600);
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             if (mailFrom != null && !mailFrom.trim().isEmpty()) message.setFrom(mailFrom);
             message.setTo(dto.getEmail());
             message.setSubject("AR 粒子特效库邮箱验证码");
-            message.setText("您的验证码是：" + code + "，5 分钟内有效。\n官方账号：xuyangtogether@163.com");
+            message.setText("您的验证码是：" + code + "，10 分钟内有效。\n官方账号：xuyangtogether@163.com");
             mailSender.send(message);
         } catch (Exception e) {
+            log.error("邮箱验证码发送失败，SMTP 配置或授权码可能不正确，recipient:{}", dto.getEmail(), e);
             redisUtils.delete("email:code:" + purpose + ":" + dto.getEmail().toLowerCase());
-            throw new BusinessException(503, "邮件服务暂未配置，请联系管理员");
+            throw new BusinessException(503, "邮件发送失败：请检查 163 邮箱 SMTP 授权码、SMTP 地址和端口");
         }
     }
 

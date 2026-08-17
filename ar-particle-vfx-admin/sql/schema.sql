@@ -20,6 +20,27 @@ CREATE TABLE sys_user (
     is_deleted  SMALLINT     NOT NULL DEFAULT 0
 );
 CREATE UNIQUE INDEX uk_sys_user_username ON sys_user (username) WHERE is_deleted = 0;
+CREATE UNIQUE INDEX uk_sys_user_email_active ON sys_user (LOWER(email)) WHERE is_deleted = 0 AND email IS NOT NULL;
+
+CREATE TABLE sys_login_log (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT,
+    username VARCHAR(128),
+    nickname VARCHAR(128),
+    email VARCHAR(128),
+    address VARCHAR(128),
+    operation VARCHAR(64) NOT NULL,
+    login_time TIMESTAMP NOT NULL DEFAULT NOW(),
+    ip VARCHAR(64),
+    device_type VARCHAR(32),
+    user_agent TEXT,
+    browser VARCHAR(64),
+    os VARCHAR(64),
+    success SMALLINT NOT NULL DEFAULT 1,
+    detail VARCHAR(256),
+    is_deleted SMALLINT NOT NULL DEFAULT 0
+);
+CREATE INDEX idx_sys_login_log_time ON sys_login_log(login_time);
 
 -- 业务特效表
 CREATE TABLE biz_effect (
@@ -86,9 +107,16 @@ CREATE TABLE biz_feedback (
     status SMALLINT NOT NULL DEFAULT 0,
     create_time TIMESTAMP NOT NULL DEFAULT NOW(),
     update_time TIMESTAMP NOT NULL DEFAULT NOW(),
+    process_time TIMESTAMP,
     is_deleted SMALLINT NOT NULL DEFAULT 0
 );
 CREATE INDEX idx_biz_feedback_status ON biz_feedback(status);
+
+CREATE TABLE biz_knowledge (
+    id BIGSERIAL PRIMARY KEY, title VARCHAR(160) NOT NULL, category VARCHAR(64), summary VARCHAR(500), content TEXT NOT NULL, view_count BIGINT NOT NULL DEFAULT 0, like_count BIGINT NOT NULL DEFAULT 0, favorite_count BIGINT NOT NULL DEFAULT 0,
+    status SMALLINT NOT NULL DEFAULT 0, create_time TIMESTAMP NOT NULL DEFAULT NOW(), update_time TIMESTAMP NOT NULL DEFAULT NOW(), create_by BIGINT, is_deleted SMALLINT NOT NULL DEFAULT 0
+);
+CREATE INDEX idx_biz_knowledge_status ON biz_knowledge(status);
 
 -- 外键约束（保证数据一致性）
 ALTER TABLE biz_favorite

@@ -140,7 +140,6 @@ export function renderHome(app) {
         <div class="home-actions"><a class="home-btn home-btn-primary" href="#/effects">探索特效宇宙 <b>↗</b></a><a class="home-btn home-btn-ghost" href="#/demo">开启实时体验 <b>◉</b></a></div>
         <div class="home-hint"><i></i> 移动鼠标操控星流 · 点击画面触发星爆</div>
       </section>
-      <div class="home-metrics"><div><strong>15</strong><span>粒子资产</span></div><div><strong>60</strong><span>FPS 流畅渲染</span></div><div><strong>1</strong><span>文件即可导出</span></div></div>
       <div class="home-corner home-corner-tl">LIVE / 3D GALAXY PARTICLE FIELD</div><div class="home-corner home-corner-br">MOVE TO EXPLORE · CLICK TO BURST</div>
     </div>
     <style>

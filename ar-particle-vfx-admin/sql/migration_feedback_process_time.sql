@@ -1,0 +1,1 @@
+ALTER TABLE biz_feedback ADD COLUMN IF NOT EXISTS process_time TIMESTAMP;

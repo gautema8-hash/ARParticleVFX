@@ -12,6 +12,9 @@ import { renderOrders } from './views/orders.js';
 import { renderAdmin } from './views/admin.js';
 import { renderFavorites } from './views/favorites.js';
 import { getEffect } from './effects/registry.js';
+import { renderFeedback } from './views/feedback.js';
+import { renderKnowledge } from './views/knowledge.js';
+import * as THREE from 'three';
 
 const routes = {
   '/': renderHome,
@@ -24,7 +27,9 @@ const routes = {
   '/login': renderLogin,
   '/orders': renderOrders,
   '/admin': renderAdmin,
-  '/favorites': renderFavorites
+  '/favorites': renderFavorites,
+  '/feedback': renderFeedback,
+  '/knowledge': renderKnowledge
 };
 
 const TITLES = {
@@ -39,6 +44,8 @@ const TITLES = {
   '/orders': '我的订单',
   '/admin': '管理后台',
   '/favorites': '我的收藏 - 粒子特效库',
+  '/feedback': '用户反馈 - 粒子特效库',
+  '/knowledge': '科技指南 - 粒子特效库',
   '/demo': '免费体验 - AR 手势粒子'
 };
 
@@ -102,8 +109,22 @@ export function initRouter(app, demoUI = {}) {
 
     setTitle(TITLES[path] || TITLES['/']);
     (routes[path] || routes['/'])(app, params);
+    requestAnimationFrame(() => initPageSpace(app));
   }
 
   window.addEventListener('hashchange', parse);
   parse();
+}
+
+let pageSpaceCleanup = null;
+function initPageSpace(app) {
+  if (pageSpaceCleanup) { pageSpaceCleanup(); pageSpaceCleanup = null; }
+  const page = app.querySelector('.page');
+  if (!page || page.classList.contains('admin-shell')) return;
+  const canvas=document.createElement('canvas'); canvas.className='page-space-canvas'; page.prepend(canvas);
+  const scene=new THREE.Scene(), camera=new THREE.PerspectiveCamera(55,1,.1,100); camera.position.z=9; const renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:false});
+  const count=1700,pos=new Float32Array(count*3),col=new Float32Array(count*3),palette=[new THREE.Color('#22d3ee'),new THREE.Color('#8b5cf6'),new THREE.Color('#f472b6'),new THREE.Color('#fde047')];
+  for(let i=0;i<count;i++){const k=i*3,r=3+Math.random()*15,a=Math.random()*Math.PI*2;pos[k]=Math.cos(a)*r;pos[k+1]=(Math.random()-.5)*10+Math.sin(a)*.5;pos[k+2]=Math.sin(a)*r-5;const c=palette[i%palette.length];col[k]=c.r;col[k+1]=c.g;col[k+2]=c.b;}
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));geo.setAttribute('color',new THREE.BufferAttribute(col,3));const stars=new THREE.Points(geo,new THREE.PointsMaterial({size:.045,vertexColors:true,transparent:true,opacity:.65,blending:THREE.AdditiveBlending}));scene.add(stars);const sea=new THREE.Mesh(new THREE.PlaneGeometry(28,16,45,24),new THREE.MeshBasicMaterial({color:'#075985',wireframe:true,transparent:true,opacity:.12}));sea.rotation.x=-Math.PI/2;sea.position.y=-4;scene.add(sea);
+  let raf=0,t=0;const resize=()=>{const r=page.getBoundingClientRect();renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.setSize(r.width,r.height,false);camera.aspect=r.width/r.height;camera.updateProjectionMatrix();};const loop=()=>{t+=.002;stars.rotation.y=t*.2;sea.position.z=Math.sin(t)*2;renderer.render(scene,camera);raf=requestAnimationFrame(loop);};resize();loop();addEventListener('resize',resize);pageSpaceCleanup=()=>{cancelAnimationFrame(raf);renderer.dispose();canvas.remove();};
 }

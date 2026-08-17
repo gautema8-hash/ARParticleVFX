@@ -9,17 +9,22 @@ import com.arpfx.platform.entity.po.BizEffect;
 import com.arpfx.platform.entity.po.BizOrder;
 import com.arpfx.platform.entity.po.SysUser;
 import com.arpfx.platform.entity.dto.EffectCreateDTO;
+import com.arpfx.platform.entity.dto.TechnicalMailDTO;
 import com.arpfx.platform.entity.vo.EffectVO;
 import com.arpfx.platform.entity.vo.OrderVO;
 import com.arpfx.platform.entity.vo.UserVO;
 import com.arpfx.platform.service.AdminService;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 
 import javax.annotation.Resource;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.Map;
 import java.util.HashMap;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import com.arpfx.platform.dao.mapper.FeedbackMapper;
 
 /**
@@ -46,6 +51,11 @@ public class AdminServiceImpl implements AdminService {
     @Resource
     private FeedbackMapper feedbackMapper;
 
+    @Resource private JavaMailSender mailSender;
+    @Value("${app.service.mail.from:${spring.mail.username:}}") private String mailFrom;
+
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
     private void checkAdmin(Long adminId) {
         SysUser user = userMapper.selectById(adminId);
         if (user == null || user.getRole() == null || user.getRole() != 1) {
@@ -61,9 +71,9 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public List<UserVO> listUsers(Long adminId) {
+    public List<UserVO> listUsers(Long adminId, String keyword) {
         checkAdmin(adminId);
-        return userMapper.selectAll().stream().map(this::toUserVO).collect(Collectors.toList());
+        return userMapper.selectAll(keyword).stream().map(this::toUserVO).collect(Collectors.toList());
     }
 
     @Override
@@ -119,7 +129,7 @@ public class AdminServiceImpl implements AdminService {
     public Map<String, Object> dashboard(Long adminId) {
         checkAdmin(adminId); Map<String, Object> data = new HashMap<>();
         data.put("userCount", userMapper.countAll()); data.put("todayRegistrations", userMapper.countToday());
-        data.put("effectCount", effectMapper.countAll()); data.put("arCount", effectMapper.countByCategory("ar")); data.put("threeDCount", effectMapper.countByCategory("3d"));
+        data.put("effectCount", effectMapper.countAll()); data.put("arCount", effectMapper.countByCategory("ar")); data.put("threeDCount", effectMapper.countByCategory("3d")); data.put("publishedEffectCount", effectMapper.countByStatus(1)); data.put("offlineEffectCount", effectMapper.countByStatus(0));
         data.put("orderCount", adminOrderMapper.countAll()); data.put("paidOrderCount", adminOrderMapper.countPaid()); data.put("revenue", adminOrderMapper.sumPaid());
         data.put("feedbackCount", feedbackMapper.countOpen()); return data;
     }
@@ -132,6 +142,16 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override public void deleteUser(Long adminId, Long userId) { checkAdmin(adminId); userMapper.deleteLogical(userId); }
+    @Override public void resetUserPassword(Long adminId, Long userId) { checkAdmin(adminId); if (userMapper.selectById(userId) == null) throw new BusinessException(ResultCodeEnum.USER_NOT_FOUND); userMapper.resetPassword(userId, passwordEncoder.encode("Qwer123..")); }
+    @Override public Map<String, Object> sendTechnicalMail(Long adminId, TechnicalMailDTO dto) {
+        checkAdmin(adminId);
+        if (dto == null || dto.getUserIds() == null || dto.getUserIds().isEmpty()) throw new BusinessException(ResultCodeEnum.PARAM_ERROR.getCode(), "请选择收件人");
+        if (dto.getUserIds().size() > 20) throw new BusinessException(ResultCodeEnum.PARAM_ERROR.getCode(), "单批最多发送 20 位用户，请分批发送");
+        if (blank(dto.getSubject()) || blank(dto.getContent())) throw new BusinessException(ResultCodeEnum.PARAM_ERROR.getCode(), "邮件主题和正文不能为空");
+        int sent=0, failed=0;
+        for (Long id : dto.getUserIds()) { SysUser user=userMapper.selectById(id); if(user==null||blank(user.getEmail())) { failed++; continue; } try { SimpleMailMessage m=new SimpleMailMessage(); if(mailFrom!=null&&!mailFrom.trim().isEmpty()) m.setFrom(mailFrom); m.setTo(user.getEmail()); m.setSubject(dto.getSubject().trim()); m.setText(dto.getContent()); mailSender.send(m); sent++; } catch(Exception e) { failed++; } }
+        Map<String,Object> result=new HashMap<>(); result.put("sent",sent); result.put("failed",failed); return result;
+    }
     @Override public void deleteEffect(Long adminId, Long effectId) { checkAdmin(adminId); effectMapper.deleteLogical(effectId); }
     private Integer number(Object value, Integer fallback) { try { return value == null ? fallback : Integer.valueOf(String.valueOf(value)); } catch (Exception e) { return fallback; } }
 

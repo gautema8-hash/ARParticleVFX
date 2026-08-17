@@ -553,6 +553,58 @@ body.theme-day .btn-primary { color: #fff; background: linear-gradient(135deg,#0
 .btn-primary:hover:not(:disabled) { box-shadow: 0 12px 32px rgba(168,85,247,.34), 0 0 24px rgba(34,211,238,.18); }
 .chip-active { box-shadow: 0 8px 24px rgba(139,92,246,.28); }
 
+.admin-shell { position:relative; min-height:calc(100vh - 80px); overflow:hidden; background:linear-gradient(135deg,#05051a,#071c3b 48%,#17052f); }
+.admin-space-canvas,.admin-space-overlay { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+.admin-space-canvas { z-index:0; opacity:.9; }
+.admin-space-overlay { z-index:1; background:radial-gradient(ellipse at center,transparent 18%,rgba(3,4,20,.32) 68%,rgba(3,4,20,.86)); }
+.admin-content { position:relative; z-index:2; }
+.admin-shell .section-title { color:#fff; text-shadow:0 0 18px rgba(54,228,255,.42); }
+.admin-shell .card { background:rgba(7,15,44,.48); border-color:rgba(54,228,255,.22); box-shadow:0 8px 30px rgba(0,0,0,.18), inset 0 0 28px rgba(139,92,246,.06); backdrop-filter:blur(8px); }
+.admin-shell .chip { color:#d9f7ff; border-color:rgba(54,228,255,.35); background:rgba(8,24,65,.74); }
+.admin-shell .chip-active { color:#fff; background:linear-gradient(135deg,#06b6d4,#7c3aed,#ec4899); border-color:transparent; }
+.admin-shell .btn { color:#e9fcff; background:linear-gradient(135deg,rgba(8,145,178,.65),rgba(124,58,237,.65)); border-color:rgba(103,232,249,.42); }
+.admin-shell .btn-primary { background:linear-gradient(135deg,#06b6d4,#7c3aed,#ec4899); color:#fff; }
+.admin-searchbar { display:flex; gap:10px; margin-bottom:14px; }
+.admin-searchbar input { flex:1; min-width:220px; }
+.admin-log-tip { margin-bottom:14px; color:#a5f3fc; }
+.log-ua { max-width:280px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.assistant-message-label { display:flex; align-items:center; gap:6px; }
+.assistant-user-avatar { display:inline-grid; place-items:center; width:22px; height:22px; border-radius:50%; color:#fff; font-size:11px; font-weight:800; background:linear-gradient(135deg,#06b6d4,#7c3aed,#ec4899); box-shadow:0 0 12px rgba(34,211,238,.35); }
+.assistant-message-user .assistant-message-body { color:#172554 !important; background:#fff !important; border-color:rgba(14,116,144,.28) !important; }
+.assistant-suggestions button { color:#172554 !important; background:#fff !important; border-color:rgba(14,116,144,.25) !important; box-shadow:0 3px 12px rgba(30,64,175,.1); }
+.feedback-filter-panel { display:flex; align-items:center; gap:12px; padding:14px 16px; margin-bottom:16px; border:1px solid rgba(103,232,249,.36); border-radius:16px; background:linear-gradient(110deg,rgba(8,24,65,.88),rgba(76,29,149,.72),rgba(157,23,77,.62)); box-shadow:0 12px 30px rgba(76,29,149,.22),inset 0 1px rgba(255,255,255,.24); }
+.feedback-filter-title { color:#dffaff; font-weight:800; letter-spacing:.5px; }
+.feedback-filter-panel select { min-width:150px; padding:10px 14px; border:1px solid rgba(103,232,249,.45); border-radius:10px; color:#e9fcff; background:rgba(3,15,40,.72); outline:none; }
+.feedback-query-btn { min-width:112px; font-weight:800; letter-spacing:1px; }
+.page { position:relative; overflow:hidden; }
+.page-space-canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; opacity:.5; z-index:0; }
+.page > *:not(.page-space-canvas):not(.admin-space-canvas):not(.admin-space-overlay) { position:relative; z-index:1; }
+.page > .admin-space-canvas, .page > .admin-space-overlay { position:absolute; inset:0; }
+[hidden] { display:none !important; }
+.nav-text-action { min-width:48px; text-align:center; font-size:13px; }
+.nav-theme { display:none !important; }
+.knowledge-card details { margin-top:14px; color:#a5f3fc; cursor:pointer; }
+.knowledge-content { margin-top:10px; line-height:1.75; color:#dbeafe; }
+.knowledge-editor { margin-bottom:16px; }
+.knowledge-author { display:flex; align-items:center; gap:6px; color:#a5f3fc; font-size:12px; }
+.knowledge-avatar { display:inline-grid; place-items:center; width:24px; height:24px; border-radius:50%; color:#fff; font-weight:800; background:linear-gradient(135deg,#06b6d4,#7c3aed,#ec4899); }
+.knowledge-stats { margin:10px 0; color:#94a3b8; font-size:12px; }
+.knowledge-actions { display:flex; gap:8px; margin-top:10px; }
+.favorite-tabs { display:flex; gap:10px; margin-bottom:16px; }
+body.theme-day .feedback-filter-panel { background:linear-gradient(110deg,#dffaff,#ede9fe,#fce7f3); border-color:rgba(14,116,144,.28); box-shadow:0 12px 28px rgba(30,64,175,.14); }
+body.theme-day .feedback-filter-title { color:#172554; }
+body.theme-day .feedback-filter-panel select { color:#172554; background:#fff; border-color:rgba(14,116,144,.3); }
+.admin-mail-toolbar { display:flex; align-items:center; gap:10px; margin:14px 0; }
+.admin-recipient-list { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:8px; max-height:260px; overflow:auto; padding:12px; margin-bottom:16px; border:1px solid rgba(103,232,249,.24); border-radius:12px; background:rgba(0,0,0,.16); }
+.admin-recipient-list label { display:flex; gap:8px; align-items:center; padding:8px; border-radius:8px; color:#dffaff; background:rgba(255,255,255,.05); }
+body.theme-day .admin-shell { background:linear-gradient(135deg,#e9faff,#f3edff 52%,#fff0f7); }
+body.theme-day .admin-shell .section-title { color:#172554; text-shadow:none; }
+body.theme-day .admin-shell .card { color:#172554; background:rgba(255,255,255,.84); border-color:rgba(14,116,144,.22); box-shadow:0 12px 32px rgba(30,64,175,.1); }
+body.theme-day .admin-shell .card h3, body.theme-day .admin-shell strong { color:#172554; }
+body.theme-day .admin-shell .muted, body.theme-day .admin-shell .card-desc { color:#52627e; }
+body.theme-day .admin-shell .compare { color:#172554; }
+body.theme-day .admin-shell .admin-recipient-list label { color:#172554; background:rgba(255,255,255,.8); }
+
 /* 会员 / 管理员源代码查看器 */
 .source-panel { margin-top: 24px; padding: 20px; border: 1px solid rgba(103,232,249,.24); border-radius: 18px; background: linear-gradient(145deg, rgba(15,23,42,.94), rgba(17,24,39,.82)); box-shadow: 0 18px 45px rgba(0,0,0,.24), inset 0 1px rgba(255,255,255,.1); }
 .source-head { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:16px; }
