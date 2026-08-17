@@ -5,6 +5,7 @@ import com.arpfx.platform.common.utils.UserContext;
 import com.arpfx.platform.entity.dto.ResetPasswordDTO;
 import com.arpfx.platform.entity.dto.UserLoginDTO;
 import com.arpfx.platform.entity.dto.UserRegisterDTO;
+import com.arpfx.platform.entity.dto.EmailCodeDTO;
 import com.arpfx.platform.entity.vo.LoginVO;
 import com.arpfx.platform.entity.vo.UserVO;
 import com.arpfx.platform.service.UserService;
@@ -43,6 +44,12 @@ public class UserController {
     public Result<LoginVO> login(@Valid @RequestBody UserLoginDTO dto) {
         return Result.success(userService.login(dto));
     }
+
+    @PostMapping("/email-code")
+    public Result<Void> emailCode(@Valid @RequestBody EmailCodeDTO dto) { userService.sendEmailCode(dto); return Result.success(); }
+
+    @PostMapping("/email-login")
+    public Result<LoginVO> emailLogin(@Valid @RequestBody EmailCodeDTO dto) { return Result.success(userService.loginByEmailCode(dto)); }
 
     @PostMapping("/reset-password")
     public Result<Void> resetPassword(@Valid @RequestBody ResetPasswordDTO dto) {

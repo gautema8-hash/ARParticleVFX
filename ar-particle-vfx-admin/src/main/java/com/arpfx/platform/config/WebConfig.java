@@ -34,6 +34,8 @@ public class WebConfig implements WebMvcConfigurer {
                 .addPathPatterns(
                         "/api/user/register",
                         "/api/user/login",
+                        "/api/user/email-code",
+                        "/api/user/email-login",
                         "/api/user/reset-password",
                         "/api/order/pay/callback",
                         "/api/assistant/chat"
@@ -44,6 +46,8 @@ public class WebConfig implements WebMvcConfigurer {
                 .excludePathPatterns(
                         "/api/user/register",
                         "/api/user/login",
+                        "/api/user/email-code",
+                        "/api/user/email-login",
                         "/api/user/reset-password",
                         // 助手使用用户在浏览器中配置的模型 API Key，保留限流但不强制平台登录
                         "/api/assistant/chat",

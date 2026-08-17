@@ -8,6 +8,16 @@ function buildParticleDemo(effect) {
   const color = isAR ? '#a855f7' : '#22d3ee';
   const count = 140;
 
+  if (isAR) {
+    return `
+    <style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050816}#camera{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(1.12) contrast(1.05)}#fx{position:fixed;inset:0;width:100%;height:100%}.tip{position:fixed;z-index:3;bottom:20px;left:50%;transform:translateX(-50%);padding:9px 14px;border-radius:999px;color:#fff;background:rgba(5,8,22,.62);font:13px sans-serif}</style>
+    <video id="camera" autoplay muted playsinline></video><div id="fx"></div><div class="tip">${effect.name} · AR 粒子特效 · 点击画面触发爆发</div>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.min.js"><\/script><script>(async function(){
+      const video=document.getElementById('camera');try{video.srcObject=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false});}catch(e){document.querySelector('.tip').textContent='请允许摄像头权限后体验 AR 特效';}
+      const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,.1,100);camera.position.z=12;const renderer=new THREE.WebGLRenderer({alpha:true,antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.setSize(innerWidth,innerHeight);document.getElementById('fx').appendChild(renderer.domElement);const n=2200,a=new Float32Array(n*3);for(let i=0;i<n;i++){const k=i*3;a[k]=(Math.random()-.5)*14;a[k+1]=(Math.random()-.5)*9;a[k+2]=(Math.random()-.5)*7;}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(a,3));const m=new THREE.PointsMaterial({color:'${color}',size:.075,transparent:true,opacity:.85,blending:THREE.AdditiveBlending});const p=new THREE.Points(g,m);scene.add(p);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});addEventListener('pointerdown',()=>{p.scale.set(1.8,1.8,1.8);setTimeout(()=>p.scale.set(1,1,1),420)});function loop(t){p.rotation.y=t*.00015;p.rotation.x=Math.sin(t*.0003)*.12;renderer.render(scene,camera);requestAnimationFrame(loop)}requestAnimationFrame(loop);
+    })();<\/script>`;
+  }
+
   return `
   <style>
     body{margin:0;overflow:hidden;background:#0a0a12}
@@ -43,8 +53,10 @@ function buildParticleDemo(effect) {
 }
 
 export async function buildSingleFileHTML(effectId, opts = {}) {
-  const effect = getEffect(effectId);
+  const effect = opts.effect || getEffect(effectId);
   if (!effect) return '';
+
+  if (effect.sourceHtml) return effect.sourceHtml;
 
   // 普通粒子特效：生成高级 3D 点云动画 HTML。
   if (effect.mode === 'particle') {

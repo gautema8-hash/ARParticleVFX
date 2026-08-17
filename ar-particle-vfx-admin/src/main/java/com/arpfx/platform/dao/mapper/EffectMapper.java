@@ -24,4 +24,7 @@ public interface EffectMapper {
     List<BizEffect> selectAll();
 
     int updateStatus(@Param("id") Long id, @Param("status") Integer status);
+    int deleteLogical(@Param("id") Long id);
+    long countAll();
+    long countByCategory(@Param("category") String category);
 }

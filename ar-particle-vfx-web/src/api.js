@@ -67,6 +67,8 @@ async function request(path, { method = 'GET', body, auth = true } = {}) {
 export const api = {
   register: (payload) => request('/user/register', { method: 'POST', body: payload, auth: false }),
   login: (payload) => request('/user/login', { method: 'POST', body: payload, auth: false }),
+  sendEmailCode: (payload) => request('/user/email-code', { method: 'POST', body: payload, auth: false }),
+  emailLogin: (payload) => request('/user/email-login', { method: 'POST', body: payload, auth: false }),
   info: () => request('/user/info'),
   favorites: () => request('/user/favorites'),
   addFavorite: (effectId) => request(`/user/favorite/${effectId}`, { method: 'POST' }),
@@ -81,7 +83,15 @@ export const api = {
   mockPayCallback: (orderNo) => request(`/order/pay/callback?orderNo=${encodeURIComponent(orderNo)}`, { method: 'POST' }),
   resetPassword: (payload) => request('/user/reset-password', { method: 'POST', body: payload, auth: false }),
   adminUsers: () => request('/admin/users'),
+  adminDashboard: () => request('/admin/dashboard'),
+  adminFeedbacks: () => request('/admin/feedbacks'),
+  updateFeedbackStatus: (id, status) => request(`/admin/feedback/${id}/status?status=${status}`, { method: 'PUT' }),
+  deleteFeedback: (id) => request(`/admin/feedback/${id}`, { method: 'DELETE' }),
+  updateAdminUser: (id, payload) => request(`/admin/user/${id}`, { method: 'PUT', body: payload }),
+  deleteAdminUser: (id) => request(`/admin/user/${id}`, { method: 'DELETE' }),
   adminOrders: () => request('/admin/orders'),
   adminEffects: () => request('/admin/effects'),
+  createEffect: (payload) => request('/admin/effect', { method: 'POST', body: payload }),
   updateEffectStatus: (id, status) => request(`/admin/effect/${id}/status?status=${status}`, { method: 'PUT' })
+  ,deleteAdminEffect: (id) => request(`/admin/effect/${id}`, { method: 'DELETE' })
 };

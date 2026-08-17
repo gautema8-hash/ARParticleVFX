@@ -1,5 +1,5 @@
 // src/views/detail.js — 特效详情页（预览 + 复制/导出）
-import { getEffect } from '../effects/registry.js';
+import { getEffect, loadRemoteEffects } from '../effects/registry.js';
 import { buildSingleFileHTML, copyCode, downloadCode } from '../exporter.js';
 import { buildEffectHTML } from '../effects/particleEffects.js';
 import { showToast } from '../lib/toast.js';
@@ -30,8 +30,12 @@ function sourceParts(html) {
   return { html, css: styles.join('\n\n'), js: scripts[scripts.length - 1] || '' };
 }
 
-export function renderDetail(app, id) {
-  const e = getEffect(id);
+export async function renderDetail(app, id) {
+  let e = getEffect(id);
+  if (!e) {
+    const remote = await loadRemoteEffects({});
+    e = remote.find((item) => item.id === id);
+  }
 
   if (!e) {
     app.innerHTML = `
@@ -50,7 +54,7 @@ export function renderDetail(app, id) {
       ? `<a class="btn btn-primary" href="#/demo?mode=${e.mode}">免费体验</a>`
       : `<span class="btn" style="opacity:.5;pointer-events:none">即将上线</span>`;
 
-  const sourceAccess = e.mode === 'particle' && canViewSource();
+  const sourceAccess = (e.mode === 'particle' || e.sourceHtml) && canViewSource();
   app.innerHTML = `
     <div class="page">
       <h2 class="section-title">${e.name}</h2>
@@ -81,7 +85,7 @@ export function renderDetail(app, id) {
     iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
     iframe.setAttribute('allow', 'camera; microphone');
     app.querySelector('#preview-box').appendChild(iframe);
-    const htmlPromise = buildEffectHTML(e);
+    const htmlPromise = e.sourceHtml ? Promise.resolve(e.sourceHtml) : buildEffectHTML(e);
     htmlPromise.then((html) => {
       iframe.srcdoc = html;
       if (!sourceAccess) return;
@@ -100,17 +104,20 @@ export function renderDetail(app, id) {
 
   // 绑定工具栏事件
   app.querySelector('#btn-copy').addEventListener('click', async () => {
-    const html = await buildSingleFileHTML(id);
+    if (!isLoggedIn()) { showToast('请先登录后复制代码'); location.hash = '#/login'; return; }
+    const html = await buildSingleFileHTML(id, { effect: e });
     const ok = await copyCode(html);
     showToast(ok ? '已复制到剪贴板，粘贴到 .html 即可运行' : '复制失败，请手动选择代码');
   });
   app.querySelector('#btn-html').addEventListener('click', async () => {
-    const html = await buildSingleFileHTML(id);
+    if (!isLoggedIn()) { showToast('请先登录后导出 HTML'); location.hash = '#/login'; return; }
+    const html = await buildSingleFileHTML(id, { effect: e });
     downloadCode(e.name, html, 'html');
     showToast('已导出 HTML 文件');
   });
   app.querySelector('#btn-txt').addEventListener('click', async () => {
-    const html = await buildSingleFileHTML(id);
+    if (!isLoggedIn()) { showToast('请先登录后导出 TXT'); location.hash = '#/login'; return; }
+    const html = await buildSingleFileHTML(id, { effect: e });
     downloadCode(e.name, html, 'txt');
     showToast('已导出 TXT 文件');
   });

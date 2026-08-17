@@ -5,6 +5,7 @@
 export const CATEGORIES = [
   { id: 'all', name: '全部特效' },
   { id: 'ar', name: 'AR专属特效' },
+  { id: '3d', name: '3D特效' },
   { id: 'animal', name: '动物粒子' },
   { id: 'flower', name: '花卉粒子' },
   { id: 'geometry', name: '几何粒子' },
@@ -12,6 +13,10 @@ export const CATEGORIES = [
   { id: 'nature', name: '自然粒子' },
   { id: 'tech', name: '科技粒子' }
 ];
+
+export const DEFAULT_EFFECT_COVER = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0e7490"/><stop offset=".48" stop-color="#312e81"/><stop offset="1" stop-color="#be185d"/></linearGradient></defs><rect width="1" height="1" fill="url(#g)"/><circle cx=".72" cy=".28" r=".18" fill="#fff" opacity=".18"/><circle cx=".25" cy=".7" r=".08" fill="#67e8f9" opacity=".45"/></svg>');
+
+export function effectCover(effect) { return effect?.coverBase64 || effect?.coverUrl || DEFAULT_EFFECT_COVER; }
 
 export const EFFECTS = [
   // —— AR 专属（已实现，可免费体验 #/demo）——
@@ -69,4 +74,18 @@ export function listEffects(filter = {}) {
 export function categoryName(id) {
   const c = CATEGORIES.find((x) => x.id === id);
   return c ? c.name : id;
+}
+
+// 后台新增的特效通过接口合并到前端注册表，旧的内置模板继续作为离线兜底。
+export async function loadRemoteEffects(filter = {}) {
+  try {
+    const response = await fetch(`/api/effect/list?category=${encodeURIComponent(filter.category || 'all')}&pageNum=1&pageSize=100`);
+    const result = await response.json();
+    if (result.code !== 200) return [];
+    return (result.data?.list || []).map((item) => ({
+      id: item.effectCode, name: item.effectName, category: item.category, mode: item.mode || 'particle',
+      tags: item.tags ? String(item.tags).split(',') : [], tier: item.tier === 1 ? 'pro' : item.tier === 2 ? 'enterprise' : 'free',
+      description: item.description || '后台发布的高级粒子特效', params: {}, sourceHtml: item.sourceHtml || '', coverBase64: item.coverBase64 || '', coverUrl: item.coverUrl || ''
+    }));
+  } catch { return []; }
 }

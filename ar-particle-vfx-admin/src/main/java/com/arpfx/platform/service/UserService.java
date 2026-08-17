@@ -5,6 +5,7 @@ import com.arpfx.platform.entity.dto.UserLoginDTO;
 import com.arpfx.platform.entity.dto.UserRegisterDTO;
 import com.arpfx.platform.entity.vo.LoginVO;
 import com.arpfx.platform.entity.vo.UserVO;
+import com.arpfx.platform.entity.dto.EmailCodeDTO;
 
 import java.util.List;
 
@@ -29,4 +30,8 @@ public interface UserService {
     List<String> listFavoriteEffectCodes(Long userId);
 
     void resetPassword(ResetPasswordDTO dto);
+
+    void sendEmailCode(EmailCodeDTO dto);
+
+    LoginVO loginByEmailCode(EmailCodeDTO dto);
 }

@@ -15,6 +15,8 @@ public interface UserMapper {
 
     SysUser selectByUsername(@Param("username") String username);
 
+    SysUser selectByEmail(@Param("email") String email);
+
     SysUser selectById(@Param("id") Long id);
 
     int insert(SysUser user);
@@ -27,4 +29,10 @@ public interface UserMapper {
     int updatePassword(@Param("id") Long id, @Param("password") String password);
 
     List<SysUser> selectAll();
+
+    long countAll();
+    long countToday();
+    int updateLastLogin(@Param("id") Long id);
+    int updateAdmin(@Param("id") Long id, @Param("email") String email, @Param("nickname") String nickname, @Param("tier") Integer tier, @Param("role") Integer role, @Param("status") Integer status);
+    int deleteLogical(@Param("id") Long id);
 }

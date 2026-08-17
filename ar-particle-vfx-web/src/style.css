@@ -305,7 +305,9 @@ button:disabled {
   transform: translateY(-2px);
 }
 .card-cover {
-  height: 120px;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  height: auto;
   border-radius: 8px;
   background: linear-gradient(135deg, #1e1b4b, #0e7490);
   margin-bottom: 12px;
@@ -514,6 +516,21 @@ button:disabled {
   font-family: inherit;
 }
 
+@media (min-width: 769px) and (max-width: 1100px) {
+  .page { padding-left: 28px; padding-right: 28px; }
+  .grid, .grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 600px) {
+  .page { padding: 16px 12px 64px; }
+  .card { padding: 14px; }
+  .toolbar, .home-actions { gap: 8px; }
+  .toolbar .btn { flex: 1 1 calc(50% - 8px); text-align: center; }
+  .form-row input, .form-row textarea, .form-row select { font-size: 16px; }
+  .preview-box { height: 240px; }
+}
+.favorite-card-link{display:block;color:inherit;text-decoration:none}.favorite-remove{margin-top:12px;width:100%}.effect-cover-upload-preview{width:160px;aspect-ratio:1;margin-top:8px;border-radius:12px;border:1px dashed rgba(103,232,249,.4);display:grid;place-items:center;color:#94a3b8;background:linear-gradient(135deg,#0e7490,#312e81,#be185d);background-size:cover;background-position:center}
+
 /* 全站点击水花反馈与高级玻璃按钮 */
 .ui-ripple-host { position: relative; overflow: hidden; isolation: isolate; }
 .ui-ripple { position: absolute; z-index: 5; pointer-events: none; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.75) 0, rgba(103,232,249,.42) 24%, rgba(168,85,247,.18) 48%, transparent 72%); transform: scale(0); animation: ui-ripple .72s cubic-bezier(.1,.7,.2,1) forwards; }
@@ -550,3 +567,4 @@ body.theme-day .btn-primary { color: #fff; background: linear-gradient(135deg,#0
 body.theme-day .source-panel { background:rgba(255,255,255,.78); border-color:rgba(14,116,144,.22); box-shadow:0 16px 40px rgba(30,64,175,.1); }
 body.theme-day .source-head h3 { color:#172554; }.theme-day .source-code-wrap { background:#f8fbff; border-color:rgba(14,116,144,.16); }.theme-day .source-code-wrap pre { color:#1e293b; }.theme-day .tok-comment{color:#64748b}.theme-day .tok-string{color:#b45309}.theme-day .tok-tag{color:#0369a1}.theme-day .tok-keyword{color:#7e22ce}.theme-day .tok-api{color:#be123c}
 @media(max-width:640px){.source-head{align-items:flex-start;flex-direction:column}.source-code-wrap pre{min-width:620px}}
+.diy-editor-wrap{position:relative;min-height:390px;border:1px solid #cbd5e1;border-radius:12px;overflow:hidden;background:#fff;box-shadow:inset 0 1px 4px rgba(15,23,42,.08)}.diy-editor-wrap pre,.diy-editor-wrap textarea{box-sizing:border-box;margin:0;width:100%;min-height:390px;padding:16px 18px;border:0;font:13px/1.65 ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;white-space:pre;tab-size:2}.diy-editor-wrap pre{position:absolute;inset:0;overflow:auto;pointer-events:none;color:#111827;background:#fff}.diy-editor-wrap textarea{position:relative;z-index:1;display:block;resize:vertical;overflow:auto;outline:0;color:transparent;background:transparent;caret-color:#0f172a;-webkit-text-fill-color:transparent}.diy-editor-wrap textarea::selection{background:rgba(59,130,246,.24)}.code-token-tag{color:#7c3aed;font-weight:700}.code-token-string{color:#047857}.code-token-keyword{color:#b45309;font-weight:700}.code-token-comment{color:#64748b;font-style:italic}.diy-editor-wrap:focus-within{border-color:#38bdf8;box-shadow:0 0 0 3px rgba(56,189,248,.18),inset 0 1px 4px rgba(15,23,42,.08)}

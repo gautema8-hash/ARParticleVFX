@@ -13,6 +13,7 @@ import com.arpfx.platform.dao.mapper.UserMapper;
 import com.arpfx.platform.entity.dto.ResetPasswordDTO;
 import com.arpfx.platform.entity.dto.UserLoginDTO;
 import com.arpfx.platform.entity.dto.UserRegisterDTO;
+import com.arpfx.platform.entity.dto.EmailCodeDTO;
 import com.arpfx.platform.entity.po.BizEffect;
 import com.arpfx.platform.entity.po.BizFavorite;
 import com.arpfx.platform.entity.po.SysUser;
@@ -22,6 +23,9 @@ import com.arpfx.platform.service.UserService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 
 import javax.annotation.Resource;
 import java.util.List;
@@ -48,29 +52,36 @@ public class UserServiceImpl implements UserService {
     @Resource
     private RedisUtils redisUtils;
 
+    @Resource
+    private JavaMailSender mailSender;
+
+    @Value("${app.service.mail.from:${spring.mail.username:}}")
+    private String mailFrom;
+
     /** 密码加密器（BCrypt 自动加盐） */
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @Override
     public void register(UserRegisterDTO dto) {
-        SysUser exist = userMapper.selectByUsername(dto.getUsername());
+        verifyCode(dto.getEmail(), "register", dto.getCode());
+        SysUser exist = userMapper.selectByEmail(dto.getEmail());
         if (exist != null) {
             throw new BusinessException(ResultCodeEnum.USER_EXIST);
         }
         SysUser user = new SysUser();
-        user.setUsername(dto.getUsername());
+        user.setUsername(dto.getEmail());
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
-        user.setEmail(dto.getEmail() == null || dto.getEmail().isEmpty() ? null : dto.getEmail());
-        user.setNickname(dto.getNickname() == null || dto.getNickname().isEmpty() ? dto.getUsername() : dto.getNickname());
+        user.setEmail(dto.getEmail());
+        user.setNickname(dto.getNickname() == null || dto.getNickname().isEmpty() ? dto.getEmail() : dto.getNickname());
         user.setTier(TierEnum.FREE.getCode());
         user.setStatus(1);
         userMapper.insert(user);
-        log.info("用户注册成功，username:{}", dto.getUsername());
+        log.info("用户注册成功，email:{}", dto.getEmail());
     }
 
     @Override
     public LoginVO login(UserLoginDTO dto) {
-        SysUser user = userMapper.selectByUsername(dto.getUsername());
+        SysUser user = userMapper.selectByEmail(dto.getEmail());
         // 统一提示「用户名或密码错误」，避免通过接口枚举已注册用户名
         if (user == null || !passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
             throw new BusinessException(ResultCodeEnum.PASSWORD_ERROR);
@@ -78,6 +89,7 @@ public class UserServiceImpl implements UserService {
         if (user.getStatus() == null || user.getStatus() != 1) {
             throw new BusinessException(ResultCodeEnum.ACCOUNT_DISABLED);
         }
+        userMapper.updateLastLogin(user.getId());
         String token = TokenUtils.generateToken();
         redisUtils.set(RedisKeyConstant.USER_TOKEN + token, String.valueOf(user.getId()), SysConstant.TOKEN_EXPIRE_SECONDS);
 
@@ -138,6 +150,46 @@ public class UserServiceImpl implements UserService {
         }
         userMapper.updatePassword(user.getId(), passwordEncoder.encode(dto.getNewPassword()));
         log.info("用户重置密码成功，username:{}", dto.getUsername());
+    }
+
+    @Override
+    public void sendEmailCode(EmailCodeDTO dto) {
+        String purpose = dto.getPurpose() == null ? "login" : dto.getPurpose();
+        String code = String.format("%06d", (int) (Math.random() * 1000000));
+        redisUtils.set("email:code:" + purpose + ":" + dto.getEmail().toLowerCase(), code, 300);
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            if (mailFrom != null && !mailFrom.trim().isEmpty()) message.setFrom(mailFrom);
+            message.setTo(dto.getEmail());
+            message.setSubject("AR 粒子特效库邮箱验证码");
+            message.setText("您的验证码是：" + code + "，5 分钟内有效。\n官方账号：xuyangtogether@163.com");
+            mailSender.send(message);
+        } catch (Exception e) {
+            redisUtils.delete("email:code:" + purpose + ":" + dto.getEmail().toLowerCase());
+            throw new BusinessException(503, "邮件服务暂未配置，请联系管理员");
+        }
+    }
+
+    @Override
+    public LoginVO loginByEmailCode(EmailCodeDTO dto) {
+        verifyCode(dto.getEmail(), "login", dto.getCode());
+        SysUser user = userMapper.selectByEmail(dto.getEmail());
+        if (user == null) throw new BusinessException(ResultCodeEnum.USER_NOT_FOUND);
+        return issueToken(user);
+    }
+
+    private void verifyCode(String email, String purpose, String code) {
+        String key = "email:code:" + purpose + ":" + email.toLowerCase();
+        if (code == null || !code.equals(redisUtils.get(key))) throw new BusinessException(400, "邮箱验证码错误或已过期");
+        redisUtils.delete(key);
+    }
+
+    private LoginVO issueToken(SysUser user) {
+        if (user.getStatus() == null || user.getStatus() != 1) throw new BusinessException(ResultCodeEnum.ACCOUNT_DISABLED);
+        userMapper.updateLastLogin(user.getId());
+        String token = TokenUtils.generateToken();
+        redisUtils.set(RedisKeyConstant.USER_TOKEN + token, String.valueOf(user.getId()), SysConstant.TOKEN_EXPIRE_SECONDS);
+        LoginVO vo = new LoginVO(); vo.setToken(token); vo.setUser(toVO(user)); return vo;
     }
 
     private UserVO toVO(SysUser user) {

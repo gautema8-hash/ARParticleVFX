@@ -8,6 +8,7 @@ import com.arpfx.platform.dao.mapper.UserMapper;
 import com.arpfx.platform.entity.po.BizEffect;
 import com.arpfx.platform.entity.po.BizOrder;
 import com.arpfx.platform.entity.po.SysUser;
+import com.arpfx.platform.entity.dto.EffectCreateDTO;
 import com.arpfx.platform.entity.vo.EffectVO;
 import com.arpfx.platform.entity.vo.OrderVO;
 import com.arpfx.platform.entity.vo.UserVO;
@@ -17,6 +18,9 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.HashMap;
+import com.arpfx.platform.dao.mapper.FeedbackMapper;
 
 /**
  * 管理后台业务实现
@@ -36,9 +40,22 @@ public class AdminServiceImpl implements AdminService {
     @Resource
     private EffectMapper effectMapper;
 
+    @Resource
+    private OrderMapper adminOrderMapper;
+
+    @Resource
+    private FeedbackMapper feedbackMapper;
+
     private void checkAdmin(Long adminId) {
         SysUser user = userMapper.selectById(adminId);
         if (user == null || user.getRole() == null || user.getRole() != 1) {
+            throw new BusinessException(ResultCodeEnum.FORBIDDEN);
+        }
+    }
+
+    private void checkPublisher(Long userId) {
+        SysUser user = userMapper.selectById(userId);
+        if (user == null || user.getRole() == null || (user.getRole() != 1 && user.getRole() != 2)) {
             throw new BusinessException(ResultCodeEnum.FORBIDDEN);
         }
     }
@@ -57,13 +74,13 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public List<EffectVO> listEffects(Long adminId) {
-        checkAdmin(adminId);
+        checkPublisher(adminId);
         return effectMapper.selectAll().stream().map(this::toEffectVO).collect(Collectors.toList());
     }
 
     @Override
     public void updateEffectStatus(Long adminId, Long effectId, Integer status) {
-        checkAdmin(adminId);
+        checkPublisher(adminId);
         if (status == null || (status != 0 && status != 1)) {
             throw new BusinessException(ResultCodeEnum.PARAM_ERROR.getCode(), "非法的状态值");
         }
@@ -72,6 +89,51 @@ public class AdminServiceImpl implements AdminService {
         }
         effectMapper.updateStatus(effectId, status);
     }
+
+    @Override
+    public EffectVO createEffect(Long publisherId, EffectCreateDTO dto) {
+        checkPublisher(publisherId);
+        if (dto == null || blank(dto.getEffectCode()) || blank(dto.getEffectName()) || blank(dto.getCategory()) || blank(dto.getSourceHtml())) {
+            throw new BusinessException(ResultCodeEnum.PARAM_ERROR.getCode(), "编码、名称、分类和 HTML 源码不能为空");
+        }
+        if (!"ar".equalsIgnoreCase(dto.getCategory()) && !"3d".equalsIgnoreCase(dto.getCategory())) {
+            throw new BusinessException(ResultCodeEnum.PARAM_ERROR.getCode(), "特效分类只能是 AR 或 3D");
+        }
+        if (effectMapper.selectByCode(dto.getEffectCode()) != null) {
+            throw new BusinessException(ResultCodeEnum.PARAM_ERROR.getCode(), "特效编码已存在");
+        }
+        BizEffect effect = new BizEffect();
+        effect.setEffectCode(dto.getEffectCode().trim()); effect.setEffectName(dto.getEffectName().trim());
+        effect.setCategory(dto.getCategory().toLowerCase()); effect.setMode(dto.getMode()); effect.setTags(dto.getTags());
+        effect.setTier(dto.getTier() == null ? 0 : dto.getTier()); effect.setDescription(dto.getDescription());
+        effect.setCoverUrl(dto.getCoverUrl()); effect.setSourceHtml(dto.getSourceHtml()); effect.setPrice(dto.getPrice());
+        effect.setCoverBase64(dto.getCoverBase64());
+        effect.setStatus(dto.getStatus() == null ? 0 : dto.getStatus()); effect.setCreateBy(publisherId); effect.setUpdateBy(publisherId);
+        effectMapper.insert(effect);
+        return toEffectVO(effect);
+    }
+
+    private boolean blank(String value) { return value == null || value.trim().isEmpty(); }
+
+    @Override
+    public Map<String, Object> dashboard(Long adminId) {
+        checkAdmin(adminId); Map<String, Object> data = new HashMap<>();
+        data.put("userCount", userMapper.countAll()); data.put("todayRegistrations", userMapper.countToday());
+        data.put("effectCount", effectMapper.countAll()); data.put("arCount", effectMapper.countByCategory("ar")); data.put("threeDCount", effectMapper.countByCategory("3d"));
+        data.put("orderCount", adminOrderMapper.countAll()); data.put("paidOrderCount", adminOrderMapper.countPaid()); data.put("revenue", adminOrderMapper.sumPaid());
+        data.put("feedbackCount", feedbackMapper.countOpen()); return data;
+    }
+
+    @Override
+    public void updateUser(Long adminId, Long userId, Map<String, Object> payload) {
+        checkAdmin(adminId); SysUser user = userMapper.selectById(userId); if (user == null) throw new BusinessException(ResultCodeEnum.USER_NOT_FOUND);
+        Integer tier = number(payload.get("tier"), user.getTier()); Integer role = number(payload.get("role"), user.getRole()); Integer status = number(payload.get("status"), user.getStatus());
+        userMapper.updateAdmin(userId, String.valueOf(payload.getOrDefault("email", user.getEmail())), String.valueOf(payload.getOrDefault("nickname", user.getNickname())), tier, role, status);
+    }
+
+    @Override public void deleteUser(Long adminId, Long userId) { checkAdmin(adminId); userMapper.deleteLogical(userId); }
+    @Override public void deleteEffect(Long adminId, Long effectId) { checkAdmin(adminId); effectMapper.deleteLogical(effectId); }
+    private Integer number(Object value, Integer fallback) { try { return value == null ? fallback : Integer.valueOf(String.valueOf(value)); } catch (Exception e) { return fallback; } }
 
     private UserVO toUserVO(SysUser u) {
         UserVO vo = new UserVO();
@@ -108,7 +170,10 @@ public class AdminServiceImpl implements AdminService {
         vo.setTier(e.getTier());
         vo.setDescription(e.getDescription());
         vo.setCoverUrl(e.getCoverUrl());
+        vo.setCoverBase64(e.getCoverBase64());
+        vo.setSourceHtml(e.getSourceHtml());
         vo.setPrice(e.getPrice());
+        vo.setCreateTime(e.getCreateTime()); vo.setPublishTime(e.getPublishTime()); vo.setOfflineTime(e.getOfflineTime());
         vo.setStatus(e.getStatus());
         return vo;
     }

@@ -14,6 +14,7 @@ CREATE TABLE sys_user (
     role        SMALLINT     NOT NULL DEFAULT 0,   -- 0普通用户 1管理员
     create_time TIMESTAMP    NOT NULL DEFAULT NOW(),
     update_time TIMESTAMP    NOT NULL DEFAULT NOW(),
+    last_login_time TIMESTAMP,
     create_by   BIGINT,
     update_by   BIGINT,
     is_deleted  SMALLINT     NOT NULL DEFAULT 0
@@ -31,10 +32,14 @@ CREATE TABLE biz_effect (
     tier        SMALLINT      NOT NULL DEFAULT 0,    -- 0免费 1Pro 2企业
     description TEXT,
     cover_url   VARCHAR(256),
+    cover_base64 TEXT,
+    source_html TEXT,
     price       DECIMAL(10,2),
     status      SMALLINT      NOT NULL DEFAULT 1,    -- 1上架 0下架
     create_time TIMESTAMP     NOT NULL DEFAULT NOW(),
     update_time TIMESTAMP     NOT NULL DEFAULT NOW(),
+    publish_time TIMESTAMP,
+    offline_time TIMESTAMP,
     create_by   BIGINT,
     update_by   BIGINT,
     is_deleted  SMALLINT      NOT NULL DEFAULT 0
@@ -70,6 +75,21 @@ CREATE TABLE biz_order (
 CREATE UNIQUE INDEX uk_biz_order_no ON biz_order (order_no) WHERE is_deleted = 0;
 CREATE INDEX idx_biz_order_user ON biz_order (user_id);
 
+CREATE TABLE biz_feedback (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT,
+    name VARCHAR(64) NOT NULL,
+    company VARCHAR(128),
+    contact VARCHAR(128) NOT NULL,
+    type VARCHAR(32),
+    description TEXT NOT NULL,
+    status SMALLINT NOT NULL DEFAULT 0,
+    create_time TIMESTAMP NOT NULL DEFAULT NOW(),
+    update_time TIMESTAMP NOT NULL DEFAULT NOW(),
+    is_deleted SMALLINT NOT NULL DEFAULT 0
+);
+CREATE INDEX idx_biz_feedback_status ON biz_feedback(status);
+
 -- 外键约束（保证数据一致性）
 ALTER TABLE biz_favorite
     ADD CONSTRAINT fk_favorite_user FOREIGN KEY (user_id) REFERENCES sys_user (id);
@@ -79,4 +99,3 @@ ALTER TABLE biz_order
     ADD CONSTRAINT fk_order_user FOREIGN KEY (user_id) REFERENCES sys_user (id);
 ALTER TABLE biz_order
     ADD CONSTRAINT fk_order_effect FOREIGN KEY (effect_id) REFERENCES biz_effect (id);
-

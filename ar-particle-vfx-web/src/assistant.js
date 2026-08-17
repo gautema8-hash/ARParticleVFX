@@ -1,6 +1,8 @@
 // 智能助手：右侧悬浮对话、模型配置和主题跟随系统
 import './assistant.css';
-import { getToken } from './api.js';
+import * as THREE from 'three';
+import { getToken, isLoggedIn } from './api.js';
+import { showToast } from './lib/toast.js';
 const STORAGE_KEY = 'arpfx_assistant_settings';
 const KEY_STORAGE = 'arpfx_assistant_api_key';
 
@@ -70,11 +72,13 @@ export function initAssistant() {
   root.innerHTML = `
     <button class="assistant-fab" type="button" aria-label="打开智能助手"><span class="assistant-fab-orbit"></span><b>AI</b><small>智能助手</small></button>
     <section class="assistant-window" aria-label="智能机器人对话窗口">
+      <canvas class="assistant-space-canvas" aria-hidden="true"></canvas>
       <header class="assistant-header"><div class="assistant-brand"><span class="assistant-avatar">✦</span><div><strong>粒子智能助手</strong><small>DEEPSEEK STYLE · 在线</small></div></div><div class="assistant-header-actions"><button type="button" data-assistant-action="settings" aria-label="设置">⚙</button><button type="button" data-assistant-action="fullscreen" aria-label="全屏">□</button><button type="button" data-assistant-action="minimize" aria-label="隐藏">—</button></div></header>
       <div class="assistant-settings" hidden><div class="assistant-settings-title"><strong>模型连接设置</strong><button type="button" data-assistant-action="settings-close">完成</button></div><p class="assistant-settings-tip">默认使用 DeepSeek · deepseek-chat。API Key 仅用于当前浏览器会话，并通过平台后端转发；DeepSeek 官方 API 需要账户额度。</p><label>API Provider（服务商）<select data-setting="provider"></select></label><label>API KEY<input data-setting="apiKey" type="password" placeholder="输入服务商 API Key" autocomplete="off"></label><label>Model（模型）<select data-setting="model"></select></label><label>Reasoning Effort（推理强度）<select data-setting="reasoning"><option value="auto">自动</option><option value="none">关闭</option><option value="low">低</option><option value="medium">中</option><option value="high">高</option></select></label><label>API Base URL（接口地址）<input data-setting="baseUrl" type="url" placeholder="OpenAI 兼容接口地址"></label><button class="assistant-save" type="button" data-assistant-action="save">保存连接配置</button></div>
       <div class="assistant-chat"><div class="assistant-messages"></div><div class="assistant-suggestions"><button type="button" data-prompt="帮我推荐适合电商首页的粒子特效">推荐电商特效</button><button type="button" data-prompt="如何把这个粒子特效接入我的网站？">接入方案</button><button type="button" data-prompt="帮我设计一个 WebAR 活动方案">WebAR 方案</button></div><form class="assistant-composer"><textarea rows="1" placeholder="描述你的需求，例如：帮我设计一个星空登录页…"></textarea><button type="submit" aria-label="发送">➤</button></form></div>
     </section>`;
   document.body.appendChild(root);
+  initAssistantSpace(root.querySelector('.assistant-space-canvas'));
   const fab = root.querySelector('.assistant-fab'), win = root.querySelector('.assistant-window'), settingsPanel = root.querySelector('.assistant-settings'), messages = root.querySelector('.assistant-messages'), form = root.querySelector('.assistant-composer'), input = form.querySelector('textarea');
   const providerSelect = root.querySelector('[data-setting="provider"]'), modelSelect = root.querySelector('[data-setting="model"]');
   const setTheme = () => { root.dataset.systemTheme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'; };
@@ -82,7 +86,7 @@ export function initAssistant() {
   const renderProviders = () => { providerSelect.innerHTML = '<optgroup label="国内大模型"></optgroup><optgroup label="海外大模型"></optgroup><optgroup label="其他服务"></optgroup>'; const groups = providerSelect.querySelectorAll('optgroup'); PROVIDERS.forEach((p) => { const group = ['deepseek','qwen','zhipu','moonshot','doubao','wenxin'].includes(p.id) ? groups[0] : ['openai','anthropic','google','mistral'].includes(p.id) ? groups[1] : groups[2]; const option = document.createElement('option'); option.value = p.id; option.textContent = p.name; group.appendChild(option); }); providerSelect.value = settings.provider; };
   const renderModels = () => { const provider = providerById(settings.provider); modelSelect.innerHTML = ''; provider.models.forEach((model) => { const option = document.createElement('option'); option.value = model; option.textContent = model; modelSelect.appendChild(option); }); modelSelect.value = provider.models.includes(settings.model) ? settings.model : provider.models[0]; settings.model = modelSelect.value; if (!settings.baseUrl || settings.provider !== provider.id) settings.baseUrl = provider.baseUrl; root.querySelector('[data-setting="baseUrl"]').value = settings.baseUrl; };
   renderProviders(); renderModels(); root.querySelector('[data-setting="apiKey"]').value = settings.apiKey; root.querySelector('[data-setting="reasoning"]').value = settings.reasoning;
-  const open = () => { win.classList.add('assistant-open'); fab.classList.add('assistant-hidden'); if (!messages.children.length) messageBubble(messages, 'assistant', '你好，我是粒子智能助手。可以帮你设计特效方案、分析接入方式、生成前端代码和优化视觉效果。'); };
+  const open = () => { if (!isLoggedIn()) { showToast('请先登录后使用粒子智能助手'); location.hash = '#/login'; return; } win.classList.add('assistant-open'); fab.classList.add('assistant-hidden'); if (!messages.children.length) messageBubble(messages, 'assistant', '你好，我是粒子智能助手。可以帮你设计特效方案、分析接入方式、生成前端代码和优化视觉效果。'); };
   const close = () => {
     win.classList.remove('assistant-open', 'assistant-minimized');
     root.classList.remove('assistant-fullscreen');
@@ -92,6 +96,8 @@ export function initAssistant() {
     fullscreenButton.setAttribute('aria-label', '全屏');
     fullscreenButton.title = '全屏';
   };
+  const onEscape = (event) => { if (event.key === 'Escape' && root.classList.contains('assistant-fullscreen')) root.querySelector('[data-assistant-action="fullscreen"]').click(); };
+  document.addEventListener('keydown', onEscape);
   fab.addEventListener('click', open);
   root.querySelectorAll('[data-assistant-action="settings"]').forEach((b) => b.addEventListener('click', () => { settingsPanel.hidden = false; }));
   root.querySelector('[data-assistant-action="settings-close"]').addEventListener('click', () => { settingsPanel.hidden = true; });
@@ -122,4 +128,15 @@ export function initAssistant() {
   });
   form.addEventListener('submit', async (event) => { event.preventDefault(); const text = input.value.trim(); if (!text) return; input.value = ''; messageBubble(messages, 'user', text); if (!settings.apiKey) { messageBubble(messages, 'assistant', 'DeepSeek 默认使用 deepseek-chat。请在设置中填写有效 API Key；DeepSeek 官方 API 需要账户额度，不能免 Key 直接调用。'); return; } const loading = messageBubble(messages, 'assistant', '正在连接模型…'); try { const headers = { 'Content-Type': 'application/json' }; const token = getToken(); if (token) headers.Authorization = `Bearer ${token}`; const response = await fetch('/api/assistant/chat', { method: 'POST', headers, body: JSON.stringify({ provider: settings.provider, baseUrl: settings.baseUrl, apiKey: settings.apiKey, model: settings.model, reasoningEffort: settings.reasoning, messages: [...messages.querySelectorAll('.assistant-message')].slice(-12).map((item) => ({ role: item.classList.contains('assistant-message-user') ? 'user' : 'assistant', content: item.querySelector('.assistant-message-body').textContent })) }) }); const result = await response.json(); if (!response.ok || result.code !== 200) throw new Error(result.message || '模型服务响应失败'); loading.remove(); messageBubble(messages, 'assistant', result.data?.reply || '模型没有返回文本内容。'); } catch (error) { loading.querySelector('.assistant-message-body').textContent = `连接失败：${error.message}。请检查 API Key、接口地址和后端服务。`; } });
   window.addEventListener('assistant:open', open); return root;
+}
+
+function initAssistantSpace(canvas) {
+  let renderer;
+  try { renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false, powerPreference: 'high-performance' }); } catch { return; }
+  const scene = new THREE.Scene(); const camera = new THREE.PerspectiveCamera(48, 1, .1, 100); camera.position.set(0, 1.2, 12);
+  const group = new THREE.Group(); scene.add(group); const total = 1500; const positions = new Float32Array(total * 3); const colors = new Float32Array(total * 3); const baseY = new Float32Array(total); const color = new THREE.Color();
+  for (let i = 0; i < total; i++) { const k = i * 3; const isSea = i > total * .48; const x = (Math.random() - .5) * 22; const z = (Math.random() - .5) * 16; const y = isSea ? -2.2 + Math.random() * 4.2 : (Math.random() - .5) * 12; positions[k] = x; positions[k + 1] = y; positions[k + 2] = z; baseY[i] = y; color.setHSL(isSea ? .52 + Math.random() * .08 : .58 + Math.random() * .25, .88, isSea ? .5 + Math.random() * .24 : .7 + Math.random() * .25); colors[k] = color.r; colors[k + 1] = color.g; colors[k + 2] = color.b; }
+  const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3)); geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3)); const material = new THREE.PointsMaterial({ size: .08, transparent: true, vertexColors: true, opacity: .8, blending: THREE.AdditiveBlending, depthWrite: false }); group.add(new THREE.Points(geometry, material));
+  const resize = () => { const rect = canvas.getBoundingClientRect(); renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5)); renderer.setSize(rect.width || 390, rect.height || 640, false); camera.aspect = (rect.width || 390) / (rect.height || 640); camera.updateProjectionMatrix(); }; resize();
+  let raf; const animate = (time) => { const data = geometry.attributes.position.array; for (let i = Math.floor(total * .48); i < total; i++) { const k = i * 3; data[k + 1] = baseY[i] + Math.sin(time * .0017 + data[k] * .65 + data[k + 2] * .2) * .28; } geometry.attributes.position.needsUpdate = true; group.rotation.y = Math.sin(time * .00025) * .08; renderer.render(scene, camera); raf = requestAnimationFrame(animate); }; raf = requestAnimationFrame(animate); window.addEventListener('resize', resize);
 }

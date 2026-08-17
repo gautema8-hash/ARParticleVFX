@@ -58,6 +58,9 @@ public class EffectServiceImpl implements EffectService {
         vo.setDescription(e.getDescription());
         vo.setCoverUrl(e.getCoverUrl());
         vo.setPrice(e.getPrice());
+        vo.setCoverBase64(e.getCoverBase64());
+        vo.setStatus(e.getStatus());
+        vo.setSourceHtml(e.getSourceHtml());
         return vo;
     }
 }

@@ -17,14 +17,11 @@ const MENUS = [
   { id: 'ar', label: 'WebAR实景', href: '#/ar', children: [
     { label: '手势交互', href: '#/demo?mode=galaxy' },
     { label: '人像粒子', href: '#/demo?mode=photoParticle' },
-    { label: '图像识别', href: '#/ar?type=marker' },
-    { label: 'AR 专题', href: '#/ar' }
+    { label: 'AR 特效库', href: '#/ar' }
   ]},
-  { id: 'pricing', label: '定价', href: '#/pricing' },
-  { id: 'enterprise', label: '企业服务', href: '#/enterprise', children: [
-    { label: '定制开发', href: '#/enterprise?type=custom' },
-    { label: '素材授权', href: '#/enterprise?type=license' },
-    { label: 'API 接入', href: '#/enterprise?type=api' }
+  { id: 'pricing', label: '定价与服务', href: '#/pricing', children: [
+    { label: '套餐定价', href: '#/pricing' },
+    { label: '定制服务', href: '#/enterprise?type=custom' }
   ]},
   { id: 'tools', label: '工具箱', href: '#/tools', children: [
     { label: '代码压缩', href: '#/tools/compress' },
@@ -83,6 +80,7 @@ function buildNav() {
   actions.className = 'nav-actions';
   actions.innerHTML =
     '<button class="nav-search" type="button" aria-label="搜索">🔍</button>' +
+    '<a class="nav-favorites" href="#/favorites" aria-label="我的收藏" title="我的收藏">♡</a>' +
     '<button class="nav-theme" type="button" aria-label="切换主题" title="切换深空/白昼主题">☼</button>' +
     '<a class="nav-demo" href="#/demo">免费体验</a>' +
     '<a class="nav-login" id="nav-auth" href="#/login">登录</a>' +

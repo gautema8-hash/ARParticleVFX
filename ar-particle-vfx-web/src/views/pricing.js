@@ -10,8 +10,8 @@ const TIERS = [
     cta: '开始使用', href: '#/effects', featured: false
   },
   {
-    id: 'pro', name: '个人 Pro', price: '¥19', period: '/月', tier: 1,
-    desc: '个人开发者与外包从业者',
+    id: 'pro', name: '个人 Pro', price: '¥1', period: '/月', tier: 1,
+    desc: '个人开发者与外包从业者，首月体验价',
     features: ['全量普通特效不限次', 'AR 特效每日 10 次', '个人商用授权', '参数调节面板'],
     cta: '立即开通', href: null, featured: true
   },
@@ -88,4 +88,3 @@ export function renderPricing(app) {
     });
   });
 }
-

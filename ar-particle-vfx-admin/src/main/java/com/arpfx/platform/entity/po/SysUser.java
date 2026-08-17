@@ -38,6 +38,7 @@ public class SysUser implements Serializable {
     private LocalDateTime createTime;
 
     private LocalDateTime updateTime;
+    private LocalDateTime lastLoginTime;
 
     private Long createBy;
 

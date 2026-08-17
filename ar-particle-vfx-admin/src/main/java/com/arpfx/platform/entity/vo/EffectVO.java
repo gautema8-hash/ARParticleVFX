@@ -4,6 +4,7 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 /**
  * 特效信息返回
@@ -34,8 +35,15 @@ public class EffectVO implements Serializable {
 
     private String coverUrl;
 
+    private String coverBase64;
+
+    private String sourceHtml;
+
     private BigDecimal price;
 
     /** 状态：1 上架，0 下架 */
     private Integer status;
+    private LocalDateTime createTime;
+    private LocalDateTime publishTime;
+    private LocalDateTime offlineTime;
 }

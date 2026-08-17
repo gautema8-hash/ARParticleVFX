@@ -72,17 +72,18 @@ export function renderLogin(app) {
   // —— 已登录：会员中心（含管理员徽章） ——
   if (loggedIn) {
     const isAdmin = currentUser?.role === 1;
+    const isCreator = currentUser?.role === 2;
     box.innerHTML = `
       <div class="auth-user">
         <div class="auth-avatar">${isAdmin ? '🛡️' : '🧑‍💻'}</div>
         <p class="auth-name">${currentUser?.nickname || currentUser?.username || ''}</p>
         <div>
-          ${isAdmin ? '<span class="auth-badge badge-admin">管理员</span>' : ''}
+          ${isAdmin ? '<span class="auth-badge badge-admin">管理员</span>' : isCreator ? '<span class="auth-badge badge-tier">创作者</span>' : ''}
           <span class="auth-badge badge-tier">${tierText(currentUser?.tier)}</span>
         </div>
         <p class="auth-meta">账号：${currentUser?.username || ''}${currentUser?.email ? ' · ' + currentUser.email : ''}</p>
         <div>
-          ${isAdmin ? '<a class="auth-out" href="#/admin" style="margin-right:10px;text-decoration:none">管理后台</a>' : ''}
+          ${isAdmin || isCreator ? '<a class="auth-out" href="#/admin" style="margin-right:10px;text-decoration:none">创作后台</a>' : ''}
           <a class="auth-out" href="#/orders" style="margin-right:10px;text-decoration:none">我的订单</a>
           <button class="auth-out" id="btn-logout" type="button">退出登录</button>
         </div>
@@ -111,20 +112,19 @@ export function renderLogin(app) {
     </div>
     <form id="auth-form" novalidate>
       <div class="auth-field">
-        <label class="auth-label">用户名</label>
-        <input class="auth-input" id="auth-username" type="text" placeholder="请输入用户名" autocomplete="username">
+        <label class="auth-label">邮箱</label>
+        <input class="auth-input" id="auth-email" type="email" placeholder="请输入邮箱" autocomplete="email">
       </div>
       <div class="auth-field" id="auth-password-field">
         <label class="auth-label">密码</label>
         <input class="auth-input" id="auth-password" type="password" placeholder="请输入密码（6-32 位）" autocomplete="current-password">
       </div>
+      <div class="auth-field" id="auth-code-field" style="display:none">
+        <label class="auth-label">邮箱验证码</label><div style="display:flex;gap:8px"><input class="auth-input" id="auth-code" type="text" placeholder="6 位验证码" maxlength="6"><button class="btn" id="btn-code" type="button">发送验证码</button></div>
+      </div>
       <div class="auth-field" id="auth-newpassword-field" style="display:none">
         <label class="auth-label">新密码</label>
         <input class="auth-input" id="auth-newpassword" type="password" placeholder="请输入新密码（6-32 位）" autocomplete="new-password">
-      </div>
-      <div class="auth-field" id="auth-email-field" style="display:none">
-        <label class="auth-label">邮箱</label>
-        <input class="auth-input" id="auth-email" type="text" placeholder="找回密码需与注册邮箱一致" autocomplete="email">
       </div>
       <div class="auth-field" id="auth-nickname-field" style="display:none">
         <label class="auth-label">昵称（选填）</label>
@@ -144,8 +144,8 @@ export function renderLogin(app) {
     mode = m;
     tabs.forEach((t) => t.classList.toggle('on', t.dataset.mode === m));
     box.querySelector('#auth-password-field').style.display = m === 'forgot' ? 'none' : '';
-    box.querySelector('#auth-newpassword-field').style.display = m === 'forgot' ? '' : 'none';
-    box.querySelector('#auth-email-field').style.display = (m === 'register' || m === 'forgot') ? '' : 'none';
+    box.querySelector('#auth-newpassword-field').style.display = 'none';
+    box.querySelector('#auth-code-field').style.display = (m === 'register' || m === 'forgot') ? '' : 'none';
     box.querySelector('#auth-nickname-field').style.display = m === 'register' ? '' : 'none';
     btn.textContent = m === 'login' ? '登 录' : m === 'register' ? '注 册' : '重置密码';
   }
@@ -154,42 +154,44 @@ export function renderLogin(app) {
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const username = box.querySelector('#auth-username').value.trim();
+    const email = box.querySelector('#auth-email').value.trim();
     const password = box.querySelector('#auth-password').value;
     const newPassword = box.querySelector('#auth-newpassword').value;
-    const email = box.querySelector('#auth-email').value.trim();
+    const code = box.querySelector('#auth-code').value.trim();
     const nickname = box.querySelector('#auth-nickname').value.trim();
 
-    if (!username) return showToast('请填写用户名');
+    if (!email) return showToast('请填写邮箱');
     if (mode === 'login' && !password) return showToast('请填写密码');
     if (mode === 'register' && password.length < 6) return showToast('密码至少 6 位');
-    if (mode === 'forgot' && (!email || !newPassword)) return showToast('请填写邮箱和新密码');
-    if (mode === 'forgot' && newPassword.length < 6) return showToast('新密码至少 6 位');
+    if ((mode === 'register' || mode === 'forgot') && !code) return showToast('请填写邮箱验证码');
 
     btn.disabled = true;
     try {
       if (mode === 'login') {
-        const data = await api.login({ username, password });
+        const data = await api.login({ email, password });
         setToken(data.token);
         setUser(data.user);
         showToast(data.user?.role === 1 ? '欢迎回来，管理员' : '登录成功');
         window.dispatchEvent(new CustomEvent('auth:change'));
         renderLogin(app);
       } else if (mode === 'register') {
-        await api.register({ username, password, nickname: nickname || undefined, email: email || undefined });
+        await api.register({ email, password, nickname: nickname || undefined, code });
         showToast('注册成功，请登录');
         setMode('login');
         box.querySelector('#auth-password').value = '';
       } else {
-        await api.resetPassword({ username, email, newPassword });
-        showToast('密码重置成功，请使用新密码登录');
-        setMode('login');
-        box.querySelector('#auth-password').value = '';
+        const data = await api.emailLogin({ email, code });
+        setToken(data.token); setUser(data.user); showToast('验证码登录成功'); window.dispatchEvent(new CustomEvent('auth:change')); renderLogin(app);
       }
     } catch (err) {
       showToast(err.message);
     } finally {
       btn.disabled = false;
     }
+  });
+  box.querySelector('#btn-code').addEventListener('click', async () => {
+    const email = box.querySelector('#auth-email').value.trim(); if (!email) return showToast('请先填写邮箱');
+    const codeButton = box.querySelector('#btn-code'); codeButton.disabled = true;
+    try { await api.sendEmailCode({ email, purpose: mode === 'register' ? 'register' : 'login' }); showToast('验证码已发送，请查收邮箱'); let seconds = 60; const timer = setInterval(() => { codeButton.textContent = `${--seconds}s`; if (seconds <= 0) { clearInterval(timer); codeButton.disabled = false; codeButton.textContent = '发送验证码'; } }, 1000); } catch (err) { showToast(err.message); codeButton.disabled = false; }
   });
 }

@@ -35,6 +35,11 @@ public class BizEffect implements Serializable {
 
     private String coverUrl;
 
+    private String coverBase64;
+
+    /** 可由管理员/创作者上传的自包含 HTML 特效源码 */
+    private String sourceHtml;
+
     private BigDecimal price;
 
     private Integer status;
@@ -42,6 +47,8 @@ public class BizEffect implements Serializable {
     private LocalDateTime createTime;
 
     private LocalDateTime updateTime;
+    private LocalDateTime publishTime;
+    private LocalDateTime offlineTime;
 
     private Long createBy;
 

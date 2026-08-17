@@ -12,6 +12,20 @@ spring:
     port: 6379
     password: ${REDIS_PASSWORD:}
     database: 0
+  # 需求自动发送至 xuyangtogether@163.com；请通过环境变量配置 SMTP 凭据
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:465}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.ssl.enable: ${MAIL_SSL:true}
+
+app:
+  service:
+    mail:
+      from: ${MAIL_FROM:${MAIL_USERNAME:}}
 
 logging:
   config: classpath:log4j2-spring.xml

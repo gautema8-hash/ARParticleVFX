@@ -40,6 +40,9 @@
         SELECT <include refid="Base_Column_List"/>
         FROM biz_order
         WHERE is_deleted = 0
-        ORDER BY id DESC
+        ORDER BY id ASC
     </select>
+    <select id="countAll" resultType="long">SELECT COUNT(*) FROM biz_order WHERE is_deleted=0</select>
+    <select id="countPaid" resultType="long">SELECT COUNT(*) FROM biz_order WHERE is_deleted=0 AND status=1</select>
+    <select id="sumPaid" resultType="java.math.BigDecimal">SELECT COALESCE(SUM(amount),0) FROM biz_order WHERE is_deleted=0 AND status=1</select>
 </mapper>

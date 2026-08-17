@@ -4,6 +4,7 @@ import { colorFormats } from '../tools/color.js';
 import { buildParamsCode } from '../tools/params.js';
 import { showToast } from '../lib/toast.js';
 import { downloadCode } from '../exporter.js';
+import { isLoggedIn } from '../api.js';
 
 async function copyText(text) {
   try {
@@ -111,26 +112,57 @@ export function renderTools(app, tool = 'compress') {
   }
 
   const DIY_TEMPLATE = `<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>DIY 粒子特效</title>
-<style>body{margin:0;overflow:hidden;background:#0a0a12}canvas{display:block}</style>
-</head><body><canvas id="c"></canvas>
-<script>
-var c=document.getElementById('c'),x=c.getContext('2d');
-function r(){c.width=innerWidth;c.height=innerHeight}r();addEventListener('resize',r);
-var p=[];
-for(var i=0;i<200;i++)p.push({x:Math.random()*c.width,y:Math.random()*c.height,vx:(Math.random()-.5)*2,vy:(Math.random()-.5)*2,s:Math.random()*2.5+1,c:'#'+((Math.random()*16777215)|8421504).toString(16)});
-function l(){x.fillStyle='rgba(10,10,18,.3)';x.fillRect(0,0,c.width,c.height);
-for(var i=0;i<p.length;i++){var q=p[i];q.x+=q.vx;q.y+=q.vy;if(q.x<0||q.x>c.width)q.vx*=-1;if(q.y<0||q.y>c.height)q.vy*=-1;x.fillStyle=q.c;x.beginPath();x.arc(q.x,q.y,q.s,0,6.283);x.fill();}requestAnimationFrame(l)}l();
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Three.js 3D 雨幕粒子</title>
+<style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#020617}canvas{display:block}</style>
+</head><body><script src="https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.min.js"><\/script><script>
+const scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0x020617,.025);
+const camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,.1,1000);camera.position.set(0,2,18);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.setSize(innerWidth,innerHeight);renderer.setClearColor(0x020617);document.body.appendChild(renderer.domElement);
+const count=5200,pos=new Float32Array(count*3),color=new Float32Array(count*3);for(let i=0;i<count;i++){const k=i*3;pos[k]=(Math.random()-.5)*24;pos[k+1]=Math.random()*18-9;pos[k+2]=(Math.random()-.5)*18;const c=new THREE.Color().setHSL(.53+Math.random()*.12,.85,.55+Math.random()*.2);color[k]=c.r;color[k+1]=c.g;color[k+2]=c.b;}
+const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));geo.setAttribute('color',new THREE.BufferAttribute(color,3));const mat=new THREE.PointsMaterial({size:.075,vertexColors:true,transparent:true,opacity:.9,blending:THREE.AdditiveBlending});const rain=new THREE.Points(geo,mat);scene.add(rain);
+const mouse={x:0,y:0};addEventListener('pointermove',e=>{mouse.x=(e.clientX/innerWidth-.5)*2;mouse.y=(e.clientY/innerHeight-.5)*2});
+function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)}addEventListener('resize',resize);
+function animate(t){const a=geo.attributes.position.array;for(let i=0;i<count;i++){const k=i*3;a[k+1]-=.11;if(a[k+1]<-9)a[k+1]=9; a[k]+=Math.sin(t*.001+i)*.0015;}rain.rotation.y+=(mouse.x*.08-rain.rotation.y)*.025;rain.rotation.x+=(mouse.y*.05-rain.rotation.x)*.025;renderer.render(scene,camera);requestAnimationFrame(animate)}requestAnimationFrame(animate);
 <\/script></body></html>`;
+
+  function escapeCode(value) {
+    return String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+  }
+
+  function highlightCode(value) {
+    const tokenPattern = /<!--[\s\S]*?-->|<\/?[A-Za-z][^>]*>|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\b(?:const|let|var|function|return|new|for|if|else|class|import|from|async|await|true|false|null)\b/g;
+    let result = ''; let cursor = 0; let match;
+    while ((match = tokenPattern.exec(value))) {
+      result += escapeCode(value.slice(cursor, match.index));
+      const token = escapeCode(match[0]);
+      const type = match[0].startsWith('<!--') ? 'comment' : match[0].startsWith('<') ? 'tag' : /^['"]/.test(match[0]) ? 'string' : 'keyword';
+      result += `<span class="code-token-${type}">${token}</span>`; cursor = match.index + match[0].length;
+    }
+    return result + escapeCode(value.slice(cursor)) + (value.endsWith('\n') ? ' ' : '');
+  }
+
+  function formatCode(value) {
+    const normalized = value.replace(/\r\n/g, '\n').replace(/>\s*</g, '>\n<');
+    let indent = 0;
+    return normalized.split('\n').map((line) => {
+      const clean = line.trim(); if (!clean) return '';
+      if (/^<\/(?!script|style)/i.test(clean) || /^<\/(script|style)/i.test(clean)) indent = Math.max(0, indent - 1);
+      const output = `${'  '.repeat(indent)}${clean}`;
+      if (/^<[^!/][^>]*[^/]>(?!.*<\/(?:[a-z]+)>$)/i.test(clean) && !/^<(meta|link|img|input|br|hr)/i.test(clean)) indent += 1;
+      return output;
+    }).join('\n');
+  }
 
   function renderDIY() {
     panel.innerHTML = `
       <div class="card">
         <h3>DIY 粒子特效</h3>
-        <p class="card-desc">输入 HTML 代码，实时运行预览，支持下载 HTML/TXT</p>
-        <div class="form-row"><textarea id="diy-code" rows="10" placeholder="粘贴 HTML 代码…"></textarea></div>
+        <p class="card-desc">输入 HTML 代码，特殊标签与关键字高亮，默认提供 Three.js 3D 下雨粒子示例</p>
+        <div class="diy-editor-wrap"><pre id="diy-highlight" aria-hidden="true"></pre><textarea id="diy-code" rows="18" spellcheck="false" placeholder="粘贴 HTML 代码…"></textarea></div>
         <div class="form-row" style="display:flex;gap:10px;flex-wrap:wrap">
           <button class="btn btn-primary" id="btn-diy-run" type="button">运行预览</button>
+          <button class="btn" id="btn-diy-format" type="button">格式化代码</button>
+          <button class="btn" id="btn-diy-reset" type="button">恢复示例</button>
           <button class="btn" id="btn-diy-html" type="button">下载 HTML</button>
           <button class="btn" id="btn-diy-txt" type="button">下载 TXT</button>
         </div>
@@ -138,13 +170,19 @@ for(var i=0;i<p.length;i++){var q=p[i];q.x+=q.vx;q.y+=q.vy;if(q.x<0||q.x>c.width
       </div>
     `;
     const ta = panel.querySelector('#diy-code');
+    const highlight = panel.querySelector('#diy-highlight');
     const iframe = panel.querySelector('#diy-preview');
     ta.value = DIY_TEMPLATE;
+    const updateHighlight = () => { highlight.innerHTML = highlightCode(ta.value); highlight.scrollTop = ta.scrollTop; highlight.scrollLeft = ta.scrollLeft; };
+    ta.addEventListener('input', updateHighlight); ta.addEventListener('scroll', () => { highlight.scrollTop = ta.scrollTop; highlight.scrollLeft = ta.scrollLeft; });
     const run = () => { iframe.srcdoc = ta.value; };
+    panel.querySelector('#btn-diy-format').addEventListener('click', () => { ta.value = formatCode(ta.value); updateHighlight(); showToast('代码已格式化'); });
+    panel.querySelector('#btn-diy-reset').addEventListener('click', () => { ta.value = DIY_TEMPLATE; updateHighlight(); showToast('已恢复 Three.js 雨幕示例'); });
     panel.querySelector('#btn-diy-run').addEventListener('click', run);
-    panel.querySelector('#btn-diy-html').addEventListener('click', () => downloadCode('diy-particle-effect', ta.value, 'html'));
-    panel.querySelector('#btn-diy-txt').addEventListener('click', () => downloadCode('diy-particle-effect', ta.value, 'txt'));
-    run();
+    const requireLogin = () => { if (isLoggedIn()) return true; showToast('请先登录后复制或导出代码'); location.hash = '#/login'; return false; };
+    panel.querySelector('#btn-diy-html').addEventListener('click', () => { if (requireLogin()) downloadCode('diy-particle-effect', ta.value, 'html'); });
+    panel.querySelector('#btn-diy-txt').addEventListener('click', () => { if (requireLogin()) downloadCode('diy-particle-effect', ta.value, 'txt'); });
+    updateHighlight(); run();
   }
 
   const renderers = { compress: renderCompress, color: renderColor, params: renderParams, diy: renderDIY };
@@ -160,4 +198,3 @@ for(var i=0;i<p.length;i++){var q=p[i];q.x+=q.vx;q.y+=q.vy;if(q.x<0||q.x>c.width
   tabs.forEach((t) => t.classList.toggle('chip-active', t.dataset.tool === initial));
   renderers[initial]();
 }
-

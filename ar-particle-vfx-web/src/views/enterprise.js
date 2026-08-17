@@ -4,7 +4,7 @@ import { showToast } from '../lib/toast.js';
 const SERVICES = [
   {
     id: 'custom', name: '定制开发', desc: '品牌 Logo 粒子、产品主题 AR、活动定制粒子',
-    price: '¥3000~20000 / 个',
+    price: '¥0~1000 / 个',
     features: ['专属粒子特效设计', '品牌元素融合', '源码交付 + 商用授权']
   },
   {
@@ -33,12 +33,13 @@ export function renderEnterprise(app) {
   app.innerHTML = `
     <div class="page">
       <h2 class="section-title">企业服务</h2>
-      <p class="muted">高客单价定制，覆盖品牌、授权、API 全场景</p>
+      <p class="muted">定制开发、素材授权、API 接入一站式服务，定制开发 ¥0~1000 / 个</p>
       <div class="grid grid-3">${cards}</div>
 
       <div class="card" style="margin-top:24px">
         <h3>联系我们</h3>
         <p class="card-desc">留下需求，我们将在一个工作日内联系你</p>
+        <a class="btn" href="mailto:xuyangtogether@163.com" style="margin-bottom:14px;display:inline-block">联系我们：xuyangtogether@163.com</a>
         <div class="form-row"><label>姓名 *</label><input type="text" id="f-name" placeholder="您的称呼"></div>
         <div class="form-row"><label>公司</label><input type="text" id="f-company" placeholder="公司/团队名称"></div>
         <div class="form-row"><label>联系方式 *</label><input type="text" id="f-contact" placeholder="邮箱 / 微信"></div>
@@ -60,14 +61,15 @@ export function renderEnterprise(app) {
       showToast('请填写姓名、联系方式和需求描述');
       return;
     }
+    if (!localStorage.getItem('arpfx_token')) {
+      showToast('请先登录后提交需求');
+      location.hash = '#/login';
+      return;
+    }
 
-    const subject = encodeURIComponent(`【企业服务咨询】${type}`);
-    const body = encodeURIComponent(
-      `姓名：${name}\n公司：${company || '—'}\n联系方式：${contact}\n需求类型：${type}\n需求描述：\n${desc}`
-    );
-    // 无后端方案：生成邮件草稿（替换为真实商务邮箱）
-    window.location.href = `mailto:sales@arpfx.com?subject=${subject}&body=${body}`;
-    showToast('已打开邮件客户端，请发送');
+    showToast('需求正在提交，请稍候…');
+    fetch('/api/service/requests', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(localStorage.getItem('arpfx_token') ? { Authorization: `Bearer ${localStorage.getItem('arpfx_token')}` } : {}) }, body: JSON.stringify({ name, company, contact, type, description: desc }) })
+      .then(async (response) => { const result = await response.json(); if (!response.ok || result.code !== 200) throw new Error(result.message || '提交失败'); showToast('需求已提交，官方账号会尽快联系你'); })
+      .catch((error) => { showToast(error.message || '提交失败，请稍后重试'); });
   });
 }
-

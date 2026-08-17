@@ -10,6 +10,7 @@ import { renderHelp } from './views/help.js';
 import { renderLogin } from './views/login.js';
 import { renderOrders } from './views/orders.js';
 import { renderAdmin } from './views/admin.js';
+import { renderFavorites } from './views/favorites.js';
 import { getEffect } from './effects/registry.js';
 
 const routes = {
@@ -22,7 +23,8 @@ const routes = {
   '/help': renderHelp,
   '/login': renderLogin,
   '/orders': renderOrders,
-  '/admin': renderAdmin
+  '/admin': renderAdmin,
+  '/favorites': renderFavorites
 };
 
 const TITLES = {
@@ -36,6 +38,7 @@ const TITLES = {
   '/login': '登录 - 会员中心',
   '/orders': '我的订单',
   '/admin': '管理后台',
+  '/favorites': '我的收藏 - 粒子特效库',
   '/demo': '免费体验 - AR 手势粒子'
 };
 
@@ -104,4 +107,3 @@ export function initRouter(app, demoUI = {}) {
   window.addEventListener('hashchange', parse);
   parse();
 }
-
