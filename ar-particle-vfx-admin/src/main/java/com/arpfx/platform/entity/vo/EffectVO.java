@@ -46,4 +46,5 @@ public class EffectVO implements Serializable {
     private LocalDateTime createTime;
     private LocalDateTime publishTime;
     private LocalDateTime offlineTime;
+    private String publisherEmail;
 }

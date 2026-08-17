@@ -19,9 +19,9 @@ public interface AdminService {
 
     List<UserVO> listUsers(Long adminId, String keyword);
 
-    List<OrderVO> listOrders(Long adminId);
+    List<OrderVO> listOrders(Long adminId, String keyword);
 
-    List<EffectVO> listEffects(Long adminId);
+    List<EffectVO> listEffects(Long adminId, String keyword);
 
     void updateEffectStatus(Long adminId, Long effectId, Integer status);
 

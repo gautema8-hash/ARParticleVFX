@@ -32,4 +32,5 @@ public class OrderVO implements Serializable {
     private Integer status;
 
     private LocalDateTime createTime;
+    private String userEmail;
 }

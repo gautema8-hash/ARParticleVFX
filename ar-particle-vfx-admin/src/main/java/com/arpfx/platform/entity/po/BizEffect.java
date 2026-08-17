@@ -51,6 +51,7 @@ public class BizEffect implements Serializable {
     private LocalDateTime offlineTime;
 
     private Long createBy;
+    private String publisherEmail;
 
     private Long updateBy;
 

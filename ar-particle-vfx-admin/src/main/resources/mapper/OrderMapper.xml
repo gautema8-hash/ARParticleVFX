@@ -42,6 +42,12 @@
         WHERE is_deleted = 0
         ORDER BY id ASC
     </select>
+    <select id="selectAllAdmin" resultType="com.arpfx.platform.entity.po.BizOrder">
+        SELECT o.*, u.email AS user_email FROM biz_order o LEFT JOIN sys_user u ON u.id=o.user_id
+        WHERE o.is_deleted=0
+        <if test="keyword != null and keyword != ''">AND (u.email LIKE CONCAT('%',#{keyword},'%') OR o.order_no LIKE CONCAT('%',#{keyword},'%'))</if>
+        ORDER BY o.id ASC
+    </select>
     <select id="countAll" resultType="long">SELECT COUNT(*) FROM biz_order WHERE is_deleted=0</select>
     <select id="countPaid" resultType="long">SELECT COUNT(*) FROM biz_order WHERE is_deleted=0 AND status=1</select>
     <select id="sumPaid" resultType="java.math.BigDecimal">SELECT COALESCE(SUM(amount),0) FROM biz_order WHERE is_deleted=0 AND status=1</select>

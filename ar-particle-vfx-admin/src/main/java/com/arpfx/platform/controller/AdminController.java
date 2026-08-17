@@ -58,10 +58,10 @@ public class AdminController {
     public Result<Map<String, Object>> dashboard() { return Result.success(adminService.dashboard(UserContext.getUserId())); }
 
     @GetMapping("/login-logs")
-    public Result<List<SysLoginLog>> loginLogs() { adminService.dashboard(UserContext.getUserId()); return Result.success(loginLogMapper.selectRecent()); }
+    public Result<List<SysLoginLog>> loginLogs(@RequestParam(required = false) String keyword) { adminService.dashboard(UserContext.getUserId()); return Result.success(loginLogMapper.selectRecent(keyword)); }
 
     @GetMapping("/feedbacks")
-    public Result<List<BizFeedback>> feedbacks(@RequestParam(required = false, defaultValue = "all") String type) { adminService.dashboard(UserContext.getUserId()); return Result.success(feedbackMapper.selectAll(type)); }
+    public Result<List<BizFeedback>> feedbacks(@RequestParam(required = false, defaultValue = "all") String type,@RequestParam(required=false) String name,@RequestParam(required=false) String contact,@RequestParam(required=false) Integer status) { adminService.dashboard(UserContext.getUserId()); return Result.success(feedbackMapper.selectAll(type,name,contact,status)); }
 
     @PutMapping("/feedback/{id}/status")
     public Result<Void> feedbackStatus(@PathVariable Long id, @RequestParam Integer status) { adminService.dashboard(UserContext.getUserId()); feedbackMapper.updateStatus(id, status); return Result.success(); }
@@ -82,7 +82,7 @@ public class AdminController {
     public Result<Map<String, Object>> technicalMail(@RequestBody TechnicalMailDTO dto) { return Result.success(adminService.sendTechnicalMail(UserContext.getUserId(), dto)); }
 
     @GetMapping("/knowledge")
-    public Result<List<BizKnowledge>> knowledge() { adminService.dashboard(UserContext.getUserId()); return Result.success(knowledgeMapper.selectAll()); }
+    public Result<List<BizKnowledge>> knowledge(@RequestParam(required=false) String title,@RequestParam(required=false) String category,@RequestParam(required=false) Integer status) { adminService.dashboard(UserContext.getUserId()); return Result.success(knowledgeMapper.selectAll(title,category,status)); }
     @PostMapping("/knowledge")
     public Result<BizKnowledge> createKnowledge(@RequestBody BizKnowledge item) { adminService.dashboard(UserContext.getUserId()); item.setCreateBy(UserContext.getUserId()); if(item.getStatus()==null)item.setStatus(0); knowledgeMapper.insert(item); return Result.success(item); }
     @PutMapping("/knowledge/{id}")
@@ -91,13 +91,13 @@ public class AdminController {
     public Result<Void> deleteKnowledge(@PathVariable Long id) { adminService.dashboard(UserContext.getUserId()); knowledgeMapper.deleteLogical(id); return Result.success(); }
 
     @GetMapping("/orders")
-    public Result<List<OrderVO>> orders() {
-        return Result.success(adminService.listOrders(UserContext.getUserId()));
+    public Result<List<OrderVO>> orders(@RequestParam(required=false) String keyword) {
+        return Result.success(adminService.listOrders(UserContext.getUserId(),keyword));
     }
 
     @GetMapping("/effects")
-    public Result<List<EffectVO>> effects() {
-        return Result.success(adminService.listEffects(UserContext.getUserId()));
+    public Result<List<EffectVO>> effects(@RequestParam(required=false) String keyword) {
+        return Result.success(adminService.listEffects(UserContext.getUserId(),keyword));
     }
 
     @PutMapping("/effect/{id}/status")

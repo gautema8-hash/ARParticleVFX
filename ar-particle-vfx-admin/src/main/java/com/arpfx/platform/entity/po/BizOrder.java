@@ -22,6 +22,7 @@ public class BizOrder implements Serializable {
     private String orderNo;
 
     private Long userId;
+    private String userEmail;
 
     private Integer orderType;
 

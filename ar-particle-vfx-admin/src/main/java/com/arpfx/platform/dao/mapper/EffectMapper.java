@@ -22,10 +22,12 @@ public interface EffectMapper {
     int insert(BizEffect effect);
 
     List<BizEffect> selectAll();
+    List<BizEffect> selectAllAdmin(@Param("keyword") String keyword);
 
     int updateStatus(@Param("id") Long id, @Param("status") Integer status);
     int deleteLogical(@Param("id") Long id);
     long countAll();
     long countByCategory(@Param("category") String category);
+    long countThreeD();
     long countByStatus(@Param("status") Integer status);
 }

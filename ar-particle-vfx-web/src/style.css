@@ -574,7 +574,12 @@ body.theme-day .btn-primary { color: #fff; background: linear-gradient(135deg,#0
 .assistant-suggestions button { color:#172554 !important; background:#fff !important; border-color:rgba(14,116,144,.25) !important; box-shadow:0 3px 12px rgba(30,64,175,.1); }
 .feedback-filter-panel { display:flex; align-items:center; gap:12px; padding:14px 16px; margin-bottom:16px; border:1px solid rgba(103,232,249,.36); border-radius:16px; background:linear-gradient(110deg,rgba(8,24,65,.88),rgba(76,29,149,.72),rgba(157,23,77,.62)); box-shadow:0 12px 30px rgba(76,29,149,.22),inset 0 1px rgba(255,255,255,.24); }
 .feedback-filter-title { color:#dffaff; font-weight:800; letter-spacing:.5px; }
-.feedback-filter-panel select { min-width:150px; padding:10px 14px; border:1px solid rgba(103,232,249,.45); border-radius:10px; color:#e9fcff; background:rgba(3,15,40,.72); outline:none; }
+  .feedback-filter-panel select { min-width:150px; padding:10px 14px; border:1px solid rgba(103,232,249,.45); border-radius:10px; color:#e9fcff; background:rgba(3,15,40,.72); outline:none; }
+  .feedback-filter-panel input { min-width:190px; flex:1; padding:10px 14px; border:1px solid rgba(103,232,249,.45); border-radius:10px; color:#e9fcff; background:rgba(3,15,40,.72); outline:none; box-shadow:inset 0 0 18px rgba(34,211,238,.08); }
+  .admin-searchbar { display:flex; align-items:center; gap:12px; padding:14px 16px; margin-bottom:16px; border:1px solid rgba(103,232,249,.36); border-radius:16px; background:linear-gradient(110deg,rgba(8,24,65,.88),rgba(76,29,149,.72),rgba(157,23,77,.62)); box-shadow:0 12px 30px rgba(76,29,149,.22),inset 0 1px rgba(255,255,255,.24); }
+  .admin-searchbar input { flex:1; min-width:220px; padding:10px 14px; border:1px solid rgba(103,232,249,.45); border-radius:10px; color:#e9fcff; background:rgba(3,15,40,.72); outline:none; }
+  .feedback-filter-panel input:focus, .feedback-filter-panel select:focus { border-color:#67e8f9; box-shadow:0 0 0 3px rgba(103,232,249,.16),0 0 18px rgba(34,211,238,.18); }
+  .admin-search-icon { color:#67e8f9; font-size:24px; font-weight:900; text-shadow:0 0 12px #22d3ee; }
 .feedback-query-btn { min-width:112px; font-weight:800; letter-spacing:1px; }
 .page { position:relative; overflow:hidden; }
 .page-space-canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; opacity:.5; z-index:0; }
@@ -593,7 +598,8 @@ body.theme-day .btn-primary { color: #fff; background: linear-gradient(135deg,#0
 .favorite-tabs { display:flex; gap:10px; margin-bottom:16px; }
 body.theme-day .feedback-filter-panel { background:linear-gradient(110deg,#dffaff,#ede9fe,#fce7f3); border-color:rgba(14,116,144,.28); box-shadow:0 12px 28px rgba(30,64,175,.14); }
 body.theme-day .feedback-filter-title { color:#172554; }
-body.theme-day .feedback-filter-panel select { color:#172554; background:#fff; border-color:rgba(14,116,144,.3); }
+  body.theme-day .feedback-filter-panel select { color:#172554; background:#fff; border-color:rgba(14,116,144,.3); }
+  body.theme-day .feedback-filter-panel input { color:#172554; background:#fff; border-color:rgba(14,116,144,.3); }
 .admin-mail-toolbar { display:flex; align-items:center; gap:10px; margin:14px 0; }
 .admin-recipient-list { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:8px; max-height:260px; overflow:auto; padding:12px; margin-bottom:16px; border:1px solid rgba(103,232,249,.24); border-radius:12px; background:rgba(0,0,0,.16); }
 .admin-recipient-list label { display:flex; gap:8px; align-items:center; padding:8px; border-radius:8px; color:#dffaff; background:rgba(255,255,255,.05); }

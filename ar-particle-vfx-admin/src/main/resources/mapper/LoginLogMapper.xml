@@ -7,7 +7,9 @@
     VALUES (#{userId},#{username},#{nickname},#{email},#{operation},COALESCE(#{loginTime},NOW()),#{ip},#{address},#{deviceType},#{userAgent},#{browser},#{os},#{success},#{detail})
   </insert>
   <select id="selectRecent" resultType="com.arpfx.platform.entity.po.SysLoginLog">
-    SELECT <include refid="cols"/> FROM sys_login_log WHERE is_deleted=0 AND login_time &gt;= NOW() - INTERVAL '7 days' ORDER BY id DESC
+    SELECT <include refid="cols"/> FROM sys_login_log WHERE is_deleted=0 AND login_time &gt;= NOW() - INTERVAL '7 days'
+    <if test="keyword != null and keyword != ''">AND (username LIKE CONCAT('%',#{keyword},'%') OR nickname LIKE CONCAT('%',#{keyword},'%') OR email LIKE CONCAT('%',#{keyword},'%'))</if>
+    ORDER BY id DESC
   </select>
   <update id="deleteExpired">UPDATE sys_login_log SET is_deleted=1 WHERE login_time &lt; NOW() - (#{days} || ' days')::interval AND is_deleted=0</update>
 </mapper>

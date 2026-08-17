@@ -6,6 +6,6 @@ import java.util.List;
 
 public interface LoginLogMapper {
     int insert(SysLoginLog log);
-    List<SysLoginLog> selectRecent();
+    List<SysLoginLog> selectRecent(@Param("keyword") String keyword);
     int deleteExpired(@Param("days") int days);
 }

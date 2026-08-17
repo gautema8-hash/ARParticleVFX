@@ -43,6 +43,12 @@
         WHERE is_deleted = 0
         ORDER BY id ASC
     </select>
+    <select id="selectAllAdmin" resultType="com.arpfx.platform.entity.po.BizEffect">
+        SELECT e.*, u.email AS publisher_email FROM biz_effect e LEFT JOIN sys_user u ON u.id=e.create_by
+        WHERE e.is_deleted=0
+        <if test="keyword != null and keyword != ''">AND (u.email LIKE CONCAT('%',#{keyword},'%') OR e.effect_name LIKE CONCAT('%',#{keyword},'%') OR e.effect_code LIKE CONCAT('%',#{keyword},'%'))</if>
+        ORDER BY e.id ASC
+    </select>
 
     <update id="updateStatus">
         UPDATE biz_effect SET status = #{status}, update_time = NOW(), publish_time = CASE WHEN #{status}=1 THEN NOW() ELSE publish_time END, offline_time = CASE WHEN #{status}=0 THEN NOW() ELSE offline_time END
@@ -51,5 +57,6 @@
     <update id="deleteLogical">UPDATE biz_effect SET is_deleted=1, status=0, update_time=NOW() WHERE id=#{id} AND is_deleted=0</update>
     <select id="countAll" resultType="long">SELECT COUNT(*) FROM biz_effect WHERE is_deleted=0</select>
     <select id="countByCategory" resultType="long">SELECT COUNT(*) FROM biz_effect WHERE is_deleted=0 AND category=#{category}</select>
+    <select id="countThreeD" resultType="long">SELECT COUNT(*) FROM biz_effect WHERE is_deleted=0 AND LOWER(COALESCE(category,'')) &lt;&gt; 'ar'</select>
     <select id="countByStatus" resultType="long">SELECT COUNT(*) FROM biz_effect WHERE is_deleted=0 AND status=#{status}</select>
 </mapper>

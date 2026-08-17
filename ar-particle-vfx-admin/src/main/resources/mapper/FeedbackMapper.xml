@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd"><mapper namespace="com.arpfx.platform.dao.mapper.FeedbackMapper">
 <insert id="insert" parameterType="com.arpfx.platform.entity.po.BizFeedback" useGeneratedKeys="true" keyProperty="id">INSERT INTO biz_feedback(user_id,name,company,contact,type,description) VALUES(#{userId},#{name},#{company},#{contact},#{type},#{description})</insert>
 <select id="countOpen" resultType="long">SELECT COUNT(*) FROM biz_feedback WHERE is_deleted=0 AND status=0</select>
-<select id="selectAll" resultType="com.arpfx.platform.entity.po.BizFeedback">SELECT * FROM biz_feedback WHERE is_deleted=0 <if test="typeFilter == 'feedback'">AND type='问题反馈'</if><if test="typeFilter == 'custom'">AND type&lt;&gt;'问题反馈'</if> ORDER BY id ASC</select>
+<select id="selectAll" resultType="com.arpfx.platform.entity.po.BizFeedback">SELECT * FROM biz_feedback WHERE is_deleted=0 <if test="typeFilter == 'feedback'">AND type='问题反馈'</if><if test="typeFilter == 'custom'">AND type&lt;&gt;'问题反馈'</if><if test="name != null and name != ''">AND name LIKE CONCAT('%',#{name},'%')</if><if test="contact != null and contact != ''">AND contact LIKE CONCAT('%',#{contact},'%')</if><if test="status != null">AND status=#{status}</if> ORDER BY id ASC</select>
 <update id="updateStatus">UPDATE biz_feedback SET status=#{status},update_time=NOW(),process_time=CASE WHEN #{status}=1 THEN NOW() ELSE process_time END WHERE id=#{id} AND is_deleted=0</update>
 <update id="deleteLogical">UPDATE biz_feedback SET is_deleted=1,update_time=NOW() WHERE id=#{id} AND is_deleted=0</update>
 </mapper>

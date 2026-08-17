@@ -28,6 +28,7 @@ public interface OrderMapper {
     int updateStatus(@Param("id") Long id, @Param("fromStatus") Integer fromStatus, @Param("status") Integer status);
 
     List<BizOrder> selectAll();
+    List<BizOrder> selectAllAdmin(@Param("keyword") String keyword);
     long countAll();
     long countPaid();
     java.math.BigDecimal sumPaid();

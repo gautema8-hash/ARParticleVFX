@@ -77,15 +77,15 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public List<OrderVO> listOrders(Long adminId) {
+    public List<OrderVO> listOrders(Long adminId, String keyword) {
         checkAdmin(adminId);
-        return orderMapper.selectAll().stream().map(this::toOrderVO).collect(Collectors.toList());
+        return orderMapper.selectAllAdmin(keyword).stream().map(this::toOrderVO).collect(Collectors.toList());
     }
 
     @Override
-    public List<EffectVO> listEffects(Long adminId) {
+    public List<EffectVO> listEffects(Long adminId, String keyword) {
         checkPublisher(adminId);
-        return effectMapper.selectAll().stream().map(this::toEffectVO).collect(Collectors.toList());
+        return effectMapper.selectAllAdmin(keyword).stream().map(this::toEffectVO).collect(Collectors.toList());
     }
 
     @Override
@@ -129,7 +129,7 @@ public class AdminServiceImpl implements AdminService {
     public Map<String, Object> dashboard(Long adminId) {
         checkAdmin(adminId); Map<String, Object> data = new HashMap<>();
         data.put("userCount", userMapper.countAll()); data.put("todayRegistrations", userMapper.countToday());
-        data.put("effectCount", effectMapper.countAll()); data.put("arCount", effectMapper.countByCategory("ar")); data.put("threeDCount", effectMapper.countByCategory("3d")); data.put("publishedEffectCount", effectMapper.countByStatus(1)); data.put("offlineEffectCount", effectMapper.countByStatus(0));
+        data.put("effectCount", effectMapper.countAll()); data.put("arCount", effectMapper.countByCategory("ar")); data.put("threeDCount", effectMapper.countThreeD()); data.put("publishedEffectCount", effectMapper.countByStatus(1)); data.put("offlineEffectCount", effectMapper.countByStatus(0));
         data.put("orderCount", adminOrderMapper.countAll()); data.put("paidOrderCount", adminOrderMapper.countPaid()); data.put("revenue", adminOrderMapper.sumPaid());
         data.put("feedbackCount", feedbackMapper.countOpen()); return data;
     }
@@ -176,6 +176,7 @@ public class AdminServiceImpl implements AdminService {
         vo.setAmount(o.getAmount());
         vo.setStatus(o.getStatus());
         vo.setCreateTime(o.getCreateTime());
+        vo.setUserEmail(o.getUserEmail());
         return vo;
     }
 
@@ -195,6 +196,7 @@ public class AdminServiceImpl implements AdminService {
         vo.setPrice(e.getPrice());
         vo.setCreateTime(e.getCreateTime()); vo.setPublishTime(e.getPublishTime()); vo.setOfflineTime(e.getOfflineTime());
         vo.setStatus(e.getStatus());
+        vo.setPublisherEmail(e.getPublisherEmail());
         return vo;
     }
 }

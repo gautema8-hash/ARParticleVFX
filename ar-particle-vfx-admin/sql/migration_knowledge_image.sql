@@ -1,0 +1,1 @@
+ALTER TABLE biz_knowledge ADD COLUMN IF NOT EXISTS image_base64 TEXT;
